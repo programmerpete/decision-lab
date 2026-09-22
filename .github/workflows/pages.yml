@@ -67,9 +67,44 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      # Creating the Pages site needs `pages: write`, so enablement lives here rather
-      # than in the unprivileged checks job. It makes publishing self-sufficient: no
-      # manual trip to Settings → Pages is required.
+      # Creating a Pages site through the API is refused for this repository even with
+      # `pages: write` on the workflow token, so the first enablement needs a repository
+      # owner. Fail with the instruction instead of a bare 403.
+      - name: Check that Pages is enabled
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          status=$(curl -s -o /dev/null -w '%{http_code}' \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${{ github.repository }}/pages")
+
+          if [ "$status" = "200" ]; then
+            echo "Pages is enabled for ${{ github.repository }}."
+            exit 0
+          fi
+
+          echo "::error title=GitHub Pages is not enabled::Publishing needs one manual step."
+          {
+            echo "## GitHub Pages is not enabled"
+            echo
+            echo "The site is built and the checks pass, but nothing can be published until"
+            echo "Pages exists for this repository, and the workflow token cannot create it."
+            echo
+            echo "An owner needs to do this once:"
+            echo
+            echo "1. Open **Settings → Pages**."
+            echo "2. Under **Build and deployment → Source**, choose **GitHub Actions**."
+            echo
+            echo "Do **not** choose *Deploy from a branch*. This workflow publishes an artifact,"
+            echo "and a branch-based source would serve the wrong thing."
+            echo
+            echo "Then re-run this workflow."
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit 1
+
+      # A no-op once Pages exists, and it saves the manual step on repositories where
+      # the workflow token is allowed to create the site.
       - name: Configure Pages
         uses: actions/configure-pages@v6
         with:

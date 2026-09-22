@@ -113,10 +113,24 @@ npm run presentation:write
 Target repository: `programmerpete/decision-lab`. Intended public URL:
 **https://programmerpete.github.io/decision-lab/**
 
-The URL becomes live only after the repository exists, Pages is enabled, and the
-deployment succeeds. In GitHub **Settings → Pages**, choose **GitHub Actions**. Push
-to `main` or run the **Checks and Pages** workflow. Pull requests run checks without
-deploying.
+The workflow runs on every push to `main` and on pull requests. Pull requests run
+checks without deploying.
+
+**One manual step is required first.** GitHub Pages must exist before anything can be
+published, and neither the workflow token nor the connected integration can create it
+for this repository — both are refused with `Resource not accessible by integration`,
+even with `pages: write` granted. So an owner must do this once:
+
+1. Open **Settings → Pages**.
+2. Under **Build and deployment → Source**, choose **GitHub Actions**.
+
+Do **not** choose _Deploy from a branch_. This workflow publishes a build artifact, and
+a branch-based source would serve the wrong thing.
+
+The `Check that Pages is enabled` step in the deploy job fails with these instructions
+in the run summary until that is done, and passes silently afterwards.
+`actions/configure-pages` still runs with `enablement: true`, so repositories where the
+token _is_ allowed to create the site need no manual step at all.
 
 GitHub Pages hosts only static assets. Later, a separately deployed server must hold
 OpenRouter/TypeSafe credentials, validate requests, and enforce access and spending
