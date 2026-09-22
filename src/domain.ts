@@ -484,6 +484,15 @@ export function routingSentence(scenario: Scenario, routing: RoutingIllustration
   }
 }
 
+/**
+ * Explain the routing illustration in one sentence.
+ *
+ * The two branches say deliberately different things. A definite suggestion needs the
+ * reassurance that nothing was executed; a human-review outcome needs to say who acts
+ * next instead, because "nothing is executed" is already covered by the threshold
+ * disclaimer above it. So the "teaching illustration" wording appears only in live mode
+ * with a definite outcome, and is absent otherwise by design rather than by omission.
+ */
 export function routingDetail(routing: RoutingIllustration | null, illustrative: boolean): string {
   if (!routing || routing.winningProbability === null) {
     return 'No winning option to evaluate yet.';
