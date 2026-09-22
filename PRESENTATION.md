@@ -69,10 +69,12 @@ recorded runs of the **same** support-triage scenario:
 | Reported cost    | $0.0000216   | $0.001793    | $0.0000206                  | $0.0017690                  |
 
 **The arms agreed on Run A and disagreed on Run B, on the same scenario and the same
-input.** So agreement is not guaranteed in either direction — it varies by scenario _and
-between runs_. Do not promise a disagreement, and do not promise an agreement. Run B is
-the more interesting shape when it happens: the arms differed in both the decision and
-the stated certainty, which is the substance of the comparison.
+input.** Run B was reproduced independently by a second reviewer rather than recorded by
+the author of this site, which is what makes it evidence rather than an anecdote. So
+agreement is not guaranteed in either direction — it varies by scenario _and between
+runs_. Promise neither. Run B is the more interesting shape when it happens: the arms
+differed in both the decision and the stated certainty, which is the substance of the
+comparison.
 
 **What is stable across both runs is the order of magnitude:** roughly 9–18× slower and
 80–86× more expensive on the model lane. That is the claim to stand behind.

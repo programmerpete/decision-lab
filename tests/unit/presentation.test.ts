@@ -71,7 +71,9 @@ describe('presentation', () => {
     expect(allText).toContain('Run B');
     expect(allText).toContain('varies by scenario and between runs');
     expect(allText).not.toContain('scenario-dependent');
-    expect(allText).toContain('do not promise a disagreement');
+    expect(allText).toContain('promise neither');
+    // Provenance: one of the two runs was not recorded by this project's author.
+    expect(allText).toContain('reproduced independently');
 
     // The stable claim is separated from the unstable one.
     expect(slideSeven?.cards?.some((card) => card.title === 'WHAT IS STABLE ACROSS RUNS')).toBe(

@@ -111,14 +111,19 @@ lane shows both, labelled `Provider latency` and `End to end`.
 support-triage scenario, same input and same five questions, produced different answers
 about whether the arms agree:
 
-| Run | Typed lane                                   | Language model                               |
-| --- | -------------------------------------------- | -------------------------------------------- |
-| A   | Billing 100%, confidence 1.00                | Billing 95%, confidence 0.98                 |
-| B   | Billing 52% / Technical 48%, confidence 0.35 | Technical 65% / Billing 25%, confidence 0.72 |
+| Run | Typed lane                                   | Language model                               | Source                   |
+| --- | -------------------------------------------- | -------------------------------------------- | ------------------------ |
+| A   | Billing 100%, confidence 1.00                | Billing 95%, confidence 0.98                 | Recorded here            |
+| B   | Billing 52% / Technical 48%, confidence 0.35 | Technical 65% / Billing 25%, confidence 0.72 | Reproduced independently |
 
 So agreement varies by scenario **and between runs**. Neither a disagreement nor an
 agreement should be promised on stage. What held across both runs was the order of
 magnitude: roughly 9–18× slower and 80–86× more expensive on the language-model lane.
+
+Run B is worth showing precisely because it is the more interesting shape: the arms
+differed in both the decision _and_ the stated certainty — 0.35 on a near-even split
+against 0.72 on a clear one. That is the substance of the comparison, and it happened on
+an authored scenario rather than a bespoke input.
 
 ## Pre-adapter checks still outstanding
 

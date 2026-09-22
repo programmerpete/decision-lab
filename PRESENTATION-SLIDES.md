@@ -139,7 +139,7 @@ Accuracy, misses, latency, and cost — measured together.
 - Run B — they split: Jev Billing 52% / Technical 48% at confidence 0.35, model Technical 65% / Billing 25% at confidence 0.72.
 - Same scenario, same input, same five questions, same code, run in parallel.
 
-> Agreement is not guaranteed in either direction. It varies by scenario and between runs, so do not promise a disagreement — or an agreement.
+> Both runs recorded from the published site; Run B was reproduced independently. Agreement is not guaranteed in either direction — it varies by scenario and between runs, so promise neither.
 
 ### WHAT IS STABLE ACROSS RUNS
 
