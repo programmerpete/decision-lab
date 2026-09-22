@@ -140,6 +140,8 @@ describe('live transport', () => {
     expect(outcome.model).toBe('typesafe/jev-1.13-20260917');
     expect(outcome.generationId).toContain('gen-dec-');
     expect(outcome.latencyMs).toBe(259);
+    expect(outcome.clientDurationMs).toBeGreaterThanOrEqual(0);
+    expect(Number.isFinite(outcome.clientDurationMs)).toBe(true);
     expect(outcome.usage.costUsd).toBeCloseTo(0.000027006, 12);
     expect(outcome.answers).toHaveLength(5);
     expect(outcome.answers[0]?.type).toBe('choice');

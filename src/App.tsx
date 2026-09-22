@@ -731,6 +731,11 @@ function Method() {
               Late responses for replaced input are discarded, so a slow call can never overwrite a
               newer one.
             </li>
+            <li>
+              Two timings are reported because they measure different things: the provider&apos;s
+              own latency, and the full round trip this browser observed including the proxy and the
+              network. Quote the second one when describing a person&apos;s wait.
+            </li>
           </ul>
         </article>
 
@@ -976,6 +981,7 @@ export default function App() {
           model: liveLane.run.model,
           generationId: liveLane.run.generationId,
           latencyMs: liveLane.run.latencyMs,
+          clientDurationMs: liveLane.run.clientDurationMs,
           costUsd: liveLane.run.usage.costUsd,
           inputTokens: liveLane.run.usage.inputTokens,
           outputTokens: liveLane.run.usage.outputTokens,
@@ -1055,7 +1061,7 @@ export default function App() {
     }
     if (liveLane.kind === 'success' && liveIsCurrent) {
       const called = liveLane.run;
-      return `Live: ${called.provider} · ${called.model} · ${called.latencyMs} ms · ${formatCost(called.usage.costUsd)} reported · request ${called.generationId}`;
+      return `Live: ${called.provider} · ${called.model} · ${called.latencyMs} ms provider · ${called.clientDurationMs} ms end to end · ${formatCost(called.usage.costUsd)} reported · request ${called.generationId}`;
     }
     if (liveLane.kind === 'error' && liveIsCurrent) {
       return `Live call failed (HTTP ${liveLane.failure.status}): ${liveLane.failure.message}`;

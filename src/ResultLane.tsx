@@ -14,7 +14,10 @@ export interface LiveProvenance {
   readonly provider: string;
   readonly model: string;
   readonly generationId: string;
+  /** What the provider reported for its own work. */
   readonly latencyMs: number;
+  /** The whole round trip as this browser observed it, including the Worker. */
+  readonly clientDurationMs: number;
   readonly costUsd: number;
   readonly inputTokens: number;
   readonly outputTokens: number;
@@ -161,7 +164,8 @@ function LaneFooter({ state }: { readonly state: LaneState }) {
   if (state.kind === 'live') {
     return (
       <footer className="lane__footer">
-        <Metric label="Latency" value={`${state.provenance.latencyMs} ms`} />
+        <Metric label="Provider latency" value={`${state.provenance.latencyMs} ms`} />
+        <Metric label="End to end" value={`${state.provenance.clientDurationMs} ms`} />
         <Metric label="API cost" value={`${formatCost(state.provenance.costUsd)} reported`} />
         <Metric label="Live connection" value="Configured" />
         <Metric label="Model" value={state.provenance.model} />

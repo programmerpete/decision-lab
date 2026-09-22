@@ -35,14 +35,25 @@ because it maps one-to-one onto Choice, Score, and Noul in a single call.
 
 ### One live result worth showing
 
-A single verified smoke-test call, reproduced four times out of four, is the clearest
+A single verified smoke-test call, reproduced five times out of five, is the clearest
 argument for reading the whole distribution rather than one number: the enquiry is
 time-pressured (0.98) and its importance score of 2.64 sits nearest "High: a human
 should respond now", yet `next_step` says `automate` and importance confidence is only
 0.64, with the top two levels split 0.35/0.65. A workflow keyed off the rounded score
-alone would escalate; one keyed off `next_step` alone would automate. Four runs of the
+alone would escalate; one keyed off `next_step` alone would automate. Five runs of the
 same authored input make that a stable property of the scenario — they measure
 consistency, not correctness.
+
+**Quote the end-to-end number, not the provider number.** The provider reported 201 ms
+for that call; the published site observed **268 ms** from submit to a complete answer,
+the difference being the proxy and the network. The lane shows both, labelled
+`Provider latency` and `End to end`. A person waiting on the screen experiences the
+second one.
+
+Treat any single figure as one sample, because the end-to-end number depends on the
+path. A second measurement from a different host came in at 450 ms end to end against
+310 ms of provider latency — same code, same Worker, different route. Say "a few
+hundred milliseconds", and name the origin you measured from.
 
 Label it for what it is: one call on synthetic input that proves transport and shape.
 It is not a benchmark and not a quality result. See

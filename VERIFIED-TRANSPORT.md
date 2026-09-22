@@ -69,7 +69,7 @@ endpoint (`/api/alpha/decisions`), and the TypeScript SDK reaches it through
 
 ## Why this matters for the presentation
 
-One live four-question call was reproduced twice with the same result. It is useful
+One live four-question call was reproduced five times with the same result. It is useful
 teaching material precisely because the point estimate and the routing answer
 disagree:
 
@@ -89,6 +89,15 @@ disagreement visible.
 transport and response shape. It is not a benchmark, not a quality result, and it
 must never be presented as this project's accuracy or latency measurement. The
 fixture-only site continues to show `null` for every metric.
+
+**Two timings, and they are not interchangeable.** The provider reports its own
+latency for the call. The browser measures the whole round trip: request, proxy,
+provider, and response parsing. From the published site that was 268 ms end to end
+against 201 ms of provider latency; a second measurement from a different host came in
+at 450 ms against 310 ms, because the end-to-end figure includes the network path.
+Quote the end-to-end figure when describing what a person waits for, name the origin
+you measured from, and keep the provider figure as the provider's own measurement. The
+lane shows both, labelled `Provider latency` and `End to end`.
 
 ## Pre-adapter checks still outstanding
 

@@ -96,8 +96,10 @@ test.describe('live mode', () => {
     await expect(jev.getByRole('listitem').nth(3)).toContainText('1.65 / 2');
     await expect(jev.getByRole('listitem').nth(3)).toContainText('Nearest level 2: Very angry');
 
-    // Provenance, not just an answer.
+    // Provenance, not just an answer. Two timings, because they measure different things.
+    await expect(jev.getByText('Provider latency')).toBeVisible();
     await expect(jev.getByText('259 ms')).toBeVisible();
+    await expect(jev.getByText('End to end')).toBeVisible();
     await expect(jev.getByText('typesafe/jev-1.13-20260917')).toBeVisible();
     await expect(jev.getByText('gen-dec-test-0001')).toBeVisible();
     await expect(jev.getByText('$0.0000270 reported')).toBeVisible();

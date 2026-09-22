@@ -83,7 +83,14 @@ export interface LiveSuccess {
   readonly generationId: string;
   readonly answers: AnswerSet;
   readonly usage: LiveUsage;
+  /** What the provider reported for its own work. */
   readonly latencyMs: number;
+  /**
+   * The whole round trip as this browser observed it: request, Worker, provider, and
+   * response parsing. This is the number to quote when describing the user's wait,
+   * because the provider's figure excludes the Worker and the network.
+   */
+  readonly clientDurationMs: number;
 }
 
 export interface LiveFailure {
@@ -246,6 +253,8 @@ export interface RequestOptions {
 
 export async function requestDecision(options: RequestOptions): Promise<LiveOutcome> {
   const { scenario, state, token, signal } = options;
+  const startedAt = performance.now();
+  const elapsed = () => Math.round(performance.now() - startedAt);
 
   if (token.trim().length === 0) {
     return failure('auth', 401, 'Enter the presenter token to make a live call.');
@@ -325,5 +334,6 @@ export async function requestDecision(options: RequestOptions): Promise<LiveOutc
     answers,
     usage: readUsage(payload.usage),
     latencyMs: isFiniteNumber(payload.latencyMs) ? payload.latencyMs : 0,
+    clientDurationMs: elapsed(),
   };
 }

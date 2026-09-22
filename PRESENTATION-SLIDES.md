@@ -42,7 +42,7 @@ Choice selects from a defined set. Score rates against ordered levels. Noul esti
 - next_step automate · human_now only 0.20
 - is_time_pressured 0.98
 
-> Reproduced across four runs. Proof of transport and shape — not a benchmark and not a quality result. Latency was 219–412 ms per call across the smoke tests; the vendor reports 70–500 ms.
+> Reproduced across five runs. Proof of transport and shape — not a benchmark and not a quality result. From the published site: 268 ms end to end, of which 201 ms was the provider. The end-to-end figure includes the proxy and the network, so it varies by path. The vendor reports 70–500 ms.
 
 > A probability of 50% is not a score of "halfway".
 
