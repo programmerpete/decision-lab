@@ -484,7 +484,7 @@ export function routingSentence(scenario: Scenario, routing: RoutingIllustration
   }
 }
 
-export function routingDetail(routing: RoutingIllustration | null): string {
+export function routingDetail(routing: RoutingIllustration | null, illustrative: boolean): string {
   if (!routing || routing.winningProbability === null) {
     return 'No winning option to evaluate yet.';
   }
@@ -492,9 +492,13 @@ export function routingDetail(routing: RoutingIllustration | null): string {
   const percent = formatPercent(routing.winningProbability);
   const basis = `${percent} was the winning-option probability at a ${routing.thresholdPercent}% threshold.`;
 
-  return routing.outcome === 'suggestion'
+  if (routing.outcome !== 'suggestion') {
+    return `${basis} A person decides what happens next.`;
+  }
+
+  return illustrative
     ? `${basis} This is an illustration, not an execution.`
-    : `${basis} A person decides what happens next.`;
+    : `${basis} The routing rule is a teaching illustration and nothing is executed.`;
 }
 
 export function buildExport(

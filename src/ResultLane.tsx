@@ -29,7 +29,7 @@ export interface LiveProvenance {
  * result" — and so a live failure can never be rendered with fixture values.
  */
 export type LaneState =
-  | { readonly kind: 'empty' }
+  | { readonly kind: 'empty'; readonly illustrative: boolean }
   | { readonly kind: 'fixture'; readonly illustration: Illustration }
   | { readonly kind: 'loading' }
   | {
@@ -264,7 +264,7 @@ function LaneBody({
   return (
     <div className="lane__empty">
       <strong>The same question. A different kind of model.</strong>
-      <span>Awaiting illustrative example.</span>
+      <span>{state.illustrative ? 'Awaiting illustrative example.' : 'Awaiting a live call.'}</span>
     </div>
   );
 }

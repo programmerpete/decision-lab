@@ -318,8 +318,9 @@ function Explore({
                     <span>⌘ / Ctrl + Enter</span>
                   </p>
                   <p className="field__hint">
-                    Choose a synthetic preset. Edited inputs need a live provider; this starter will
-                    not fabricate an answer.
+                    {mode === 'live'
+                      ? 'Choose a synthetic preset, or type any synthetic text. Live mode sends it to the provider and shows the answers, or the failure.'
+                      : 'Choose a synthetic preset. Edited inputs need a live provider; this starter will not fabricate an answer.'}
                   </p>
                 </div>
 
@@ -342,7 +343,7 @@ function Explore({
 
                 <div className="panel__actions">
                   <button type="button" className="button button--primary" onClick={onSubmit}>
-                    Show illustrative comparison
+                    {mode === 'live' ? 'Run live comparison' : 'Show illustrative comparison'}
                   </button>
                 </div>
 
@@ -469,11 +470,13 @@ function Explore({
                     </p>
 
                     <p className="policy__note">{THRESHOLD_DISCLAIMER}</p>
-                    <p className="policy__note">{routingDetail(routing)}</p>
+                    <p className="policy__note">{routingDetail(routing, mode === 'fixture')}</p>
                   </div>
 
                   <div className="policy__outcome">
-                    <p className="policy__outcome-label">Illustrated outcome</p>
+                    <p className="policy__outcome-label">
+                      {mode === 'live' ? 'Outcome of this rule' : 'Illustrated outcome'}
+                    </p>
                     <p className="policy__outcome-value">
                       {routing ? routingSentence(scenario, routing) : 'No result yet'}
                     </p>
@@ -964,8 +967,10 @@ export default function App() {
     liveLane.scenarioId === scenario.id;
 
   const jevState: LaneState = useMemo(() => {
+    const empty: LaneState = { kind: 'empty', illustrative: mode === 'fixture' };
+
     if (mode === 'fixture') {
-      return run ? { kind: 'fixture', illustration: run.illustration } : { kind: 'empty' };
+      return run ? { kind: 'fixture', illustration: run.illustration } : empty;
     }
 
     if (liveLane.kind === 'loading') {
@@ -998,12 +1003,14 @@ export default function App() {
       };
     }
 
-    return { kind: 'empty' };
+    return empty;
   }, [mode, run, liveLane, liveIsCurrent]);
 
   const llmState: LaneState = useMemo(() => {
     if (mode === 'fixture') {
-      return run ? { kind: 'fixture', illustration: run.illustration } : { kind: 'empty' };
+      return run
+        ? { kind: 'fixture', illustration: run.illustration }
+        : { kind: 'empty', illustrative: true };
     }
 
     return {

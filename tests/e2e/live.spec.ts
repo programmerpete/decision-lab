@@ -83,7 +83,7 @@ test.describe('live mode', () => {
     await enterLiveMode(page);
 
     await page.getByRole('button', { name: 'Duplicate charge', exact: true }).click();
-    await page.getByRole('button', { name: 'Show illustrative comparison' }).click();
+    await page.getByRole('button', { name: 'Run live comparison' }).click();
 
     const jev = lane(page, 'Jev');
     await expect(jev.getByRole('listitem')).toHaveCount(5);
@@ -130,7 +130,7 @@ test.describe('live mode', () => {
     await page.goto('./');
     await enterLiveMode(page);
     await page.getByRole('button', { name: 'Duplicate charge', exact: true }).click();
-    await page.getByRole('button', { name: 'Show illustrative comparison' }).click();
+    await page.getByRole('button', { name: 'Run live comparison' }).click();
     await expect(lane(page, 'Jev').getByRole('listitem')).toHaveCount(5);
 
     expect(capturedAuth).toBe(`Bearer ${TOKEN}`);
@@ -159,7 +159,7 @@ test.describe('live mode', () => {
     await page.goto('./');
     await enterLiveMode(page);
     await page.getByRole('button', { name: 'Duplicate charge', exact: true }).click();
-    await page.getByRole('button', { name: 'Show illustrative comparison' }).click();
+    await page.getByRole('button', { name: 'Run live comparison' }).click();
 
     const jev = lane(page, 'Jev');
     await expect(jev.getByRole('alert')).toContainText('Live call failed · HTTP 502');
@@ -179,14 +179,14 @@ test.describe('live mode', () => {
     await page.goto('./');
     await enterLiveMode(page);
     await page.getByRole('button', { name: 'Duplicate charge', exact: true }).click();
-    await page.getByRole('button', { name: 'Show illustrative comparison' }).click();
+    await page.getByRole('button', { name: 'Run live comparison' }).click();
     await expect(lane(page, 'Jev').getByRole('listitem')).toHaveCount(5);
 
     const textarea = page.getByLabel('What should the system understand?');
     await textarea.press('End');
     await textarea.pressSequentially('!');
 
-    await expect(lane(page, 'Jev').getByText('Awaiting illustrative example.')).toBeVisible();
+    await expect(lane(page, 'Jev').getByText('Awaiting a live call.')).toBeVisible();
     await expect(lane(page, 'Jev')).not.toContainText('91%');
   });
 
@@ -201,7 +201,7 @@ test.describe('live mode', () => {
     await page.getByText('Presenter: live mode').click();
     await page.getByLabel('Live', { exact: true }).check();
     await page.getByRole('button', { name: 'Duplicate charge', exact: true }).click();
-    await page.getByRole('button', { name: 'Show illustrative comparison' }).click();
+    await page.getByRole('button', { name: 'Run live comparison' }).click();
 
     await expect(lane(page, 'Jev').getByRole('alert')).toContainText('presenter token');
     expect(called).toBe(false);
@@ -221,5 +221,27 @@ test.describe('live mode', () => {
 
     expect(called).toBe(false);
     await expect(lane(page, 'Jev').getByText('Fixture', { exact: true })).toBeVisible();
+  });
+
+  test('names the action for what it will actually do', async ({ page }) => {
+    await mockLive(page, 200, SUPPORT_RESPONSE);
+    await page.goto('./');
+
+    // Fixture mode costs nothing, so "illustrative" is the honest word.
+    await expect(page.getByRole('button', { name: 'Show illustrative comparison' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Run live comparison' })).toHaveCount(0);
+    await expect(lane(page, 'Jev').getByText('Awaiting illustrative example.')).toBeVisible();
+
+    await enterLiveMode(page);
+
+    // Live mode spends money and contacts a provider, so the label must say so.
+    await expect(page.getByRole('button', { name: 'Run live comparison' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Show illustrative comparison' })).toHaveCount(0);
+    await expect(lane(page, 'Jev').getByText('Awaiting a live call.')).toBeVisible();
+    await expect(page.getByText('Illustrative fixtures. No API connected.')).toHaveCount(0);
+
+    // The policy card describes a rule, not the data, so its label changes too.
+    await expect(page.getByText('Illustrated outcome')).toHaveCount(0);
+    await expect(page.getByText('Outcome of this rule')).toBeVisible();
   });
 });
