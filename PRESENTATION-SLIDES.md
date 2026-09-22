@@ -42,7 +42,7 @@ Choice selects from a defined set. Score rates against ordered levels. Noul esti
 - next_step automate · human_now only 0.20
 - is_time_pressured 0.98
 
-> Reproduced across two runs. Proof of transport and shape — not a benchmark and not a quality result. Latency was 254–412 ms per call; the vendor reports 70–500 ms.
+> Reproduced across four runs. Proof of transport and shape — not a benchmark and not a quality result. Latency was 219–412 ms per call across the smoke tests; the vendor reports 70–500 ms.
 
 > A probability of 50% is not a score of "halfway".
 
@@ -137,7 +137,7 @@ Accuracy, misses, latency, and cost — measured together.
 
 **Speaker notes**
 
-- This release has no measured model results. Every metric on the site is null by design, not zero.
+- Fixture mode has no measured model results: every metric there is null by design, not zero. Live mode reports real provider latency, tokens, and cost, labelled with the resolved model and request id.
 - The experiment: independent labels, safe counterparts, a held-out subset, equivalent context, and all questions offered to both systems.
 - Report accuracy, misses, false alarms, review coverage, and transport or schema failures alongside latency p50/p95 and sample counts.
 - Separate billed from estimated cost, browser from provider timing, and retries from first attempts. Self-reported LLM probabilities are not automatically calibrated.

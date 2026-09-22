@@ -35,12 +35,14 @@ because it maps one-to-one onto Choice, Score, and Noul in a single call.
 
 ### One live result worth showing
 
-A single verified smoke-test call, reproduced twice, is the clearest argument for
-reading the whole distribution rather than one number: the enquiry is time-pressured
-(0.98) and its importance score of 2.64 sits nearest "High: a human should respond
-now", yet `next_step` says `automate` and importance confidence is only 0.64, with the
-top two levels split 0.35/0.65. A workflow keyed off the rounded score alone would
-escalate; one keyed off `next_step` alone would automate.
+A single verified smoke-test call, reproduced four times out of four, is the clearest
+argument for reading the whole distribution rather than one number: the enquiry is
+time-pressured (0.98) and its importance score of 2.64 sits nearest "High: a human
+should respond now", yet `next_step` says `automate` and importance confidence is only
+0.64, with the top two levels split 0.35/0.65. A workflow keyed off the rounded score
+alone would escalate; one keyed off `next_step` alone would automate. Four runs of the
+same authored input make that a stable property of the scenario — they measure
+consistency, not correctness.
 
 Label it for what it is: one call on synthetic input that proves transport and shape.
 It is not a benchmark and not a quality result. See
