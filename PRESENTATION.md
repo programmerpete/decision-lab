@@ -57,23 +57,28 @@ hundred milliseconds", and name the origin you measured from.
 
 ### Both lanes, live
 
-The site now runs both arms in parallel on the same input and the same five questions,
-each labelled with its own provider, model, request id, latency, and reported cost:
+The site runs both arms in parallel on the same input and the same five questions, each
+labelled with its own provider, model, request id, latency, and reported cost. Two
+recorded runs of the **same** support-triage scenario:
 
-|                  | Jev              | claude-haiku-4.5  |
-| ---------------- | ---------------- | ----------------- |
-| Provider         | TypeSafe         | Amazon Bedrock    |
-| Provider latency | 217 ms           | 3932 ms           |
-| End to end       | 345 ms           | 4056 ms           |
-| Reported cost    | $0.0000216       | $0.001793         |
-| Tokens           | 515 in / 112 out | 1193 in / 120 out |
+|                  | Run A: Jev   | Run A: model | Run B: Jev                  | Run B: model                |
+| ---------------- | ------------ | ------------ | --------------------------- | --------------------------- |
+| Route            | Billing 100% | Billing 95%  | Billing 52% / Technical 48% | Technical 65% / Billing 25% |
+| Confidence       | 1.00         | 0.98         | 0.35                        | 0.72                        |
+| Provider latency | 317 ms       | 2,496 ms     | 249 ms                      | 2,351 ms                    |
+| Reported cost    | $0.0000216   | $0.001793    | $0.0000206                  | $0.0017690                  |
 
-That is roughly 18× slower and 83× more expensive on this workload. **It is one call per
-arm, so it is a smoke test of the comparison and not a benchmark.** The two arms agreed
-on the route in that run; the disagreement seen on the traffic-cop scenario is
-scenario-dependent, so do not promise a disagreement on stage. The durable difference
-is the order of magnitude in latency and cost, and the self-reported nature of the
-language model's probabilities.
+**The arms agreed on Run A and disagreed on Run B, on the same scenario and the same
+input.** So agreement is not guaranteed in either direction — it varies by scenario _and
+between runs_. Do not promise a disagreement, and do not promise an agreement. Run B is
+the more interesting shape when it happens: the arms differed in both the decision and
+the stated certainty, which is the substance of the comparison.
+
+**What is stable across both runs is the order of magnitude:** roughly 9–18× slower and
+80–86× more expensive on the model lane. That is the claim to stand behind.
+
+Two calls per arm is still a smoke test of the comparison, not a benchmark — it measures
+nothing about accuracy.
 
 Label it for what it is: one call on synthetic input that proves transport and shape.
 It is not a benchmark and not a quality result. See

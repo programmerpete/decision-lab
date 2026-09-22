@@ -133,13 +133,21 @@ Selection grants no permissions and runs nothing.
 
 Accuracy, misses, latency, and cost — measured together.
 
-### BOTH LANES, LIVE — ONE SYNTHETIC CALL EACH
+### TWO RUNS OF THE SAME SCENARIO
 
-- Jev — 217 ms provider · $0.0000216 · 515 in / 112 out
-- claude-haiku-4.5 via Amazon Bedrock — 3932 ms provider · $0.001793 · 1193 in / 120 out
-- Same input, same five questions, same request shape, run in parallel.
+- Run A — both arms routed to Billing: Jev 100% at confidence 1.00, model 95% at confidence 0.98.
+- Run B — they split: Jev Billing 52% / Technical 48% at confidence 0.35, model Technical 65% / Billing 25% at confidence 0.72.
+- Same scenario, same input, same five questions, same code, run in parallel.
 
-> One call per arm. A smoke test of the comparison, not a benchmark: one sample measures nothing about accuracy, and the two arms agreed on the route in this run. The disagreement is scenario-dependent, so do not promise it.
+> Agreement is not guaranteed in either direction. It varies by scenario and between runs, so do not promise a disagreement — or an agreement.
+
+### WHAT IS STABLE ACROSS RUNS
+
+- Provider latency — Jev 249–317 ms, model 2,351–3,932 ms.
+- Reported cost — Jev about $0.00002, model about $0.0018.
+- Roughly 9–18× slower and 80–86× more expensive, on both runs.
+
+> Two calls per arm. A smoke test of the comparison, not a benchmark: it measures nothing about accuracy.
 
 > No headline without its workload.
 

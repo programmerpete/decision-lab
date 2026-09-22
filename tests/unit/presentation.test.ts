@@ -59,6 +59,26 @@ describe('presentation', () => {
     expect(liveCall?.footer).toContain('vendor reports');
   });
 
+  it('shows both recorded runs, so either live outcome is predicted', () => {
+    const slideSeven = SLIDES[6];
+    const allText = JSON.stringify(SLIDES);
+
+    // A presenter who reproduces the demo live may get either result. The deck shows
+    // both rather than betting on one, and must not imply that choosing the right
+    // scenario guarantees a disagreement.
+    expect(allText).toContain('TWO RUNS OF THE SAME SCENARIO');
+    expect(allText).toContain('Run A');
+    expect(allText).toContain('Run B');
+    expect(allText).toContain('varies by scenario and between runs');
+    expect(allText).not.toContain('scenario-dependent');
+    expect(allText).toContain('do not promise a disagreement');
+
+    // The stable claim is separated from the unstable one.
+    expect(slideSeven?.cards?.some((card) => card.title === 'WHAT IS STABLE ACROSS RUNS')).toBe(
+      true,
+    );
+  });
+
   it('confines vendor speed and cost claims to attributed context', () => {
     const slideSeven = SLIDES[6];
     const notes = (slideSeven?.notes ?? []).join(' ');

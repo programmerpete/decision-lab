@@ -107,6 +107,19 @@ Quote the end-to-end figure when describing what a person waits for, name the or
 you measured from, and keep the provider figure as the provider's own measurement. The
 lane shows both, labelled `Provider latency` and `End to end`.
 
+**Agreement between the two lanes is not stable.** Two recorded runs of the same
+support-triage scenario, same input and same five questions, produced different answers
+about whether the arms agree:
+
+| Run | Typed lane                                   | Language model                               |
+| --- | -------------------------------------------- | -------------------------------------------- |
+| A   | Billing 100%, confidence 1.00                | Billing 95%, confidence 0.98                 |
+| B   | Billing 52% / Technical 48%, confidence 0.35 | Technical 65% / Billing 25%, confidence 0.72 |
+
+So agreement varies by scenario **and between runs**. Neither a disagreement nor an
+agreement should be promised on stage. What held across both runs was the order of
+magnitude: roughly 9–18× slower and 80–86× more expensive on the language-model lane.
+
 ## Pre-adapter checks still outstanding
 
 These were **not** covered by the smoke test and must be verified before any adapter

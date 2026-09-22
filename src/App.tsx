@@ -815,15 +815,22 @@ function Method() {
             and they are not calibrated or directly comparable. The lane says so on the card.
           </p>
           <p>
-            They are also not the same order of cost. In one measured pair of calls on the same
-            input, the typed lane returned in 217 ms for $0.0000216 while the language model took
-            3932 ms and $0.001793. That is one call per arm — a smoke test of the comparison, not a
-            benchmark — but the order of magnitude is the durable part.
+            They are also not the same order of cost. Across two recorded pairs of calls on the same
+            input, the typed lane returned in 249–317 ms for about $0.00002 while the language model
+            took 2,351–3,932 ms for about $0.0018 — roughly 9–18× slower and 80–86× more expensive.
+            That is two calls per arm, a smoke test of the comparison rather than a benchmark, but
+            the order of magnitude is the durable part.
           </p>
           <p>
-            When the two arms disagree on the routing illustration, both outcomes are shown. When
-            they agree, one outcome is shown, because there is nothing to compare. Neither outcome
-            is executed.
+            The route itself is not stable. On one run both arms chose Billing; on another run of
+            the same scenario and input the typed lane split 52/48 and chose Billing while the model
+            chose Technical. Agreement varies by scenario and between runs, so neither an agreement
+            nor a disagreement should be promised.
+          </p>
+          <p>
+            When the two arms differ on the routing illustration, both outcomes are shown, with each
+            lane&apos;s winning probability. When they agree, one outcome is shown, because there is
+            nothing to compare. Neither outcome is executed.
           </p>
         </article>
 
