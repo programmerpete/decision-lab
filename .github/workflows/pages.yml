@@ -21,13 +21,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
-      - name: Configure Pages
-        uses: actions/configure-pages@v6
-        with:
-          # Lets the workflow create the Pages site itself with GITHUB_TOKEN, so
-          # publishing needs no manual trip to Settings → Pages.
-          enablement: true
-
       - name: Set up Node
         uses: actions/setup-node@v7
         with:
@@ -73,6 +66,14 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
+      # Creating the Pages site needs `pages: write`, so enablement lives here rather
+      # than in the unprivileged checks job. It makes publishing self-sufficient: no
+      # manual trip to Settings → Pages is required.
+      - name: Configure Pages
+        uses: actions/configure-pages@v6
+        with:
+          enablement: true
+
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v5
