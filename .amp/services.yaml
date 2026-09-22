@@ -1,0 +1,6 @@
+services:
+  lab:
+    command: npm run dev -- --host 0.0.0.0 --port $PORT --strictPort
+    portal:
+      title: Decision Lab
+      description: Fixture-only teaching demo. Explore the playground, Learn the primitives, Present the deck, Method for the limits.

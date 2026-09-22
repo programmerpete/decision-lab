@@ -13,7 +13,7 @@ The starter uses React, TypeScript, Vite, and decorative Three.js. GitHub Pages 
 - Jev exposes typed Choice, Score, and Noul judgments rather than generated prose. Choice returns a distribution over supplied alternatives; Score uses ordered levels; Noul estimates a proposition's probability.
 - Many questions can share one state/request. This is central to the demo and must also be offered to the LLM baseline.
 - TypeSafe documents `POST https://api.typesafe.ai/v1/systemone` with a TypeSafe API key. A model alias such as `jev-latest` may change; record the resolved version where available.
-- The owner reports OpenRouter access. **The exact Jev model ID, availability, authentication, and wire format through that account remain unverified.** Do not assume Jev is a chat-completions model. Verify access before writing its provider adapter; use direct TypeSafe only if appropriate access is available.
+- **The OpenRouter decisions transport is verified by live calls** (HTTP 200, 254–412 ms, roughly $0.00002 per call): `POST https://openrouter.ai/api/alpha/decisions` with model slug `~typesafe/jev-latest`, which resolves to a dated id such as `typesafe/jev-1.13-20260917`. It is not chat completions. `score` is a continuous float, `confidence` exists on choice and score but not on noul, `probabilities` carries the full distribution, and one request carries every question for a state. See [VERIFIED-TRANSPORT.md](VERIFIED-TRANSPORT.md). Account rate limits, host runtime compatibility, usage/cost fields, and retention policy are still unverified and must be checked before an adapter is written. Direct TypeSafe remains documented but uncalled.
 - Confidence is not maximum probability or measured accuracy. Jev confidence depends on the primitive; Noul does not expose the separate confidence measure. Preserve provider-specific semantics.
 - Vendor 200× speed / 400× cost claims are workload-specific claims, not acceptance criteria or results for this project.
 - Schema compliance does not imply correct or safe decisions. Jev documentation discusses math, indirection, distracting context, and adversarial weaknesses. Include failure cases.
@@ -67,7 +67,9 @@ LLM probabilities, if requested, are self-reported and not automatically calibra
 
 Four scenarios and 14 presets, primitive guide, slides, responsive UI, JSON export, honest fixture labels, disabled-by-absence live integration. Exact unmatched input returns a clear error. Output clears when input or scenario changes. Tests and production build must pass; inspect desktop/mobile and result states before release.
 
-### Phase 1 — Verify provider access and build one live vertical slice
+### Phase 1 — Verify provider access and build one live vertical slice (implemented)
+
+**Done.** Transport verified by live calls, and the site now has an opt-in live mode for the Jev lane: presenter token held in memory, per-lane states, provider-identity and usage provenance, abort and stale-response handling, schema validation that rejects a partly valid response whole, and an explicit failure state that never falls back to fixtures. The LLM lane has no live adapter and says so. `npm run smoke:live` exercises the deployed endpoint by hand and never runs in CI.
 
 At home, inspect the OpenRouter account/model catalogue and TypeSafe docs. Capture one successful, synthetic request/response for each provider; redact keys. Record exact model IDs and supported structured schemas, rate limits, usage/cost fields, and retention policy. Complete support triage first; do not add a generic adapter framework before transport is understood.
 

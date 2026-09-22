@@ -1,0 +1,27 @@
+node_modules
+dist
+dist-ssr
+coverage
+
+# Test artifacts
+test-results
+playwright-report
+blob-report
+.scratch
+
+# Secrets and local environment
+.env
+.env.*
+!.env.example
+
+# Editor and OS noise
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.local
+*.log
+
+# Amp working directories
+.amp/portals
+.amp/data.db

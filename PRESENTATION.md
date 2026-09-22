@@ -11,7 +11,40 @@ Target: 15–20 minutes, mixed technical and leadership audience. Open **Present
 | 9–12 min  | Moderation / PII                        | Compare Scam warning and Credential scam; show obfuscated synthetic address. Context matters. Detection does not mean exact span identification or safe redaction.          |
 | 12–14 min | Agent tools                             | Search documentation, missing order number, unsupported deletion. A fixed catalogue is inspectable. Selection grants no permissions; no tool is actually called.            |
 | 14–17 min | The experiment                          | Show measured results only after API/evaluation phases. Discuss accuracy, misses, false alarms, review rate, p50/p95 latency, total cost, and failures together.            |
-| 17–20 min | Use each component for its strengths    | Explain a measured hybrid workflow and its tradeoffs. End on evidence and limitations.                                                                                      |
+| 17–20 min | Use each component for its strengths    | Explain a measured hybrid workflow and its tradeoffs. Land the two application use cases below. End on evidence and limitations.                                            |
+
+## Application use cases
+
+Both belong in the closing section. Use case A also illustrates the primitives slide,
+because it maps one-to-one onto Choice, Score, and Noul in a single call.
+
+### A — The AI traffic cop
+
+- **IN:** incoming form leads, support tickets, emails.
+- **Jev asks (~200 ms):** What is it? (choice) · How important? (score) · What next? (choice or noul).
+- One request carries every judgment, so four questions cost one round trip.
+- **HIGH** → a human, now ("It's the CMO of Coca-Cola.") · **MIDDLE** → automate it, or an LLM drafts the reply · **LOW** → ignore it (confidence too low to act on).
+- Supporting stat cards: _Design agency_ — lead scored 0–1, 98% = reply fast. _Support desk_ — routed to the right team in ~200 ms.
+- Takeaway: **keep Jev in an advisory role.**
+
+### B — Put Jev at the front of the queue
+
+- **Before:** "Get an instant quote" → "We'll email you by end of day."
+- **After:** "I need my driveway power washed" → Jev scores nearby businesses → best match and quote, instantly.
+- Takeaway: **you don't waste the client's time.**
+
+### One live result worth showing
+
+A single verified smoke-test call, reproduced twice, is the clearest argument for
+reading the whole distribution rather than one number: the enquiry is time-pressured
+(0.98) and its importance score of 2.64 sits nearest "High: a human should respond
+now", yet `next_step` says `automate` and importance confidence is only 0.64, with the
+top two levels split 0.35/0.65. A workflow keyed off the rounded score alone would
+escalate; one keyed off `next_step` alone would automate.
+
+Label it for what it is: one call on synthetic input that proves transport and shape.
+It is not a benchmark and not a quality result. See
+[VERIFIED-TRANSPORT.md](VERIFIED-TRANSPORT.md).
 
 ## State the mode aloud
 
