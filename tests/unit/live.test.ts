@@ -91,20 +91,21 @@ afterEach(() => {
 });
 
 describe('live request shape', () => {
-  it('never sends a model field', () => {
-    const request = buildLiveRequest(scenario('support-triage'), 'hello');
-    expect(Object.keys(request)).toEqual(['state', 'questions']);
+  it('never sends a model field, and always names the lane', () => {
+    const request = buildLiveRequest(scenario('support-triage'), 'hello', 'llm');
+    expect(Object.keys(request)).toEqual(['lane', 'state', 'questions']);
+    expect(request.lane).toBe('llm');
     expect(JSON.stringify(request)).not.toContain('"model"');
   });
 
   it('asks every judgment in one request', () => {
     const target = scenario('support-triage');
-    const request = buildLiveRequest(target, 'hello');
+    const request = buildLiveRequest(target, 'hello', 'jev');
     expect(Object.keys(request.questions)).toEqual(target.questions.map((q) => q.id));
   });
 
   it('maps criteria to the verified wire shapes', () => {
-    const request = buildLiveRequest(scenario('support-triage'), 'hello');
+    const request = buildLiveRequest(scenario('support-triage'), 'hello', 'jev');
 
     expect(request.questions.team?.criteria).toEqual(
       scenario('support-triage').questions[0].primitive === 'choice'
@@ -121,7 +122,7 @@ describe('live request shape', () => {
 
   it('carries the state verbatim', () => {
     const state = '  Exact text, with spacing.  ';
-    expect(buildLiveRequest(scenario('support-triage'), state).state).toBe(state);
+    expect(buildLiveRequest(scenario('support-triage'), state, 'jev').state).toBe(state);
   });
 });
 
@@ -130,7 +131,12 @@ describe('live transport', () => {
     const target = scenario('support-triage');
     respondWith(successPayload(target));
 
-    const outcome = await requestDecision({ scenario: target, state: 'hello', token: TOKEN });
+    const outcome = await requestDecision({
+      scenario: target,
+      state: 'hello',
+      lane: 'jev',
+      token: TOKEN,
+    });
 
     expect(outcome.ok).toBe(true);
     if (!outcome.ok) {
@@ -151,7 +157,7 @@ describe('live transport', () => {
     const target = scenario('support-triage');
     respondWith(successPayload(target));
 
-    await requestDecision({ scenario: target, state: 'hello', token: TOKEN });
+    await requestDecision({ scenario: target, state: 'hello', lane: 'jev', token: TOKEN });
 
     const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
     expect(JSON.stringify(init.headers)).toContain('Bearer');
@@ -162,6 +168,7 @@ describe('live transport', () => {
     const outcome = await requestDecision({
       scenario: scenario('support-triage'),
       state: 'hello',
+      lane: 'jev',
       token: '   ',
     });
 
@@ -188,6 +195,7 @@ describe('live transport', () => {
     const outcome = await requestDecision({
       scenario: scenario('support-triage'),
       state: 'hello',
+      lane: 'jev',
       token: TOKEN,
     });
 
@@ -206,7 +214,12 @@ describe('live transport', () => {
       502,
     );
 
-    const outcome = await requestDecision({ scenario: target, state: 'hello', token: TOKEN });
+    const outcome = await requestDecision({
+      scenario: target,
+      state: 'hello',
+      lane: 'jev',
+      token: TOKEN,
+    });
 
     expect(outcome.ok).toBe(false);
     if (!outcome.ok) {
@@ -222,7 +235,12 @@ describe('live transport', () => {
 
     respondWith(successPayload(target, { answers }));
 
-    const outcome = await requestDecision({ scenario: target, state: 'hello', token: TOKEN });
+    const outcome = await requestDecision({
+      scenario: target,
+      state: 'hello',
+      lane: 'jev',
+      token: TOKEN,
+    });
     expect(outcome.ok).toBe(false);
     if (!outcome.ok) {
       expect(outcome.kind).toBe('invalid_response');
@@ -236,7 +254,12 @@ describe('live transport', () => {
 
     respondWith(successPayload(target, { answers }));
 
-    const outcome = await requestDecision({ scenario: target, state: 'hello', token: TOKEN });
+    const outcome = await requestDecision({
+      scenario: target,
+      state: 'hello',
+      lane: 'jev',
+      token: TOKEN,
+    });
     expect(outcome.ok).toBe(false);
   });
 
@@ -253,7 +276,12 @@ describe('live transport', () => {
 
     respondWith(successPayload(target, { answers }));
 
-    const outcome = await requestDecision({ scenario: target, state: 'hello', token: TOKEN });
+    const outcome = await requestDecision({
+      scenario: target,
+      state: 'hello',
+      lane: 'jev',
+      token: TOKEN,
+    });
     expect(outcome.ok).toBe(false);
   });
 
@@ -272,7 +300,12 @@ describe('live transport', () => {
 
     respondWith(successPayload(target, { answers }));
 
-    const outcome = await requestDecision({ scenario: target, state: 'hello', token: TOKEN });
+    const outcome = await requestDecision({
+      scenario: target,
+      state: 'hello',
+      lane: 'jev',
+      token: TOKEN,
+    });
     expect(outcome.ok).toBe(true);
     if (outcome.ok) {
       const answer = outcome.answers[3];
@@ -297,7 +330,12 @@ describe('live transport', () => {
 
     respondWith(successPayload(target, { answers }));
 
-    const outcome = await requestDecision({ scenario: target, state: 'hello', token: TOKEN });
+    const outcome = await requestDecision({
+      scenario: target,
+      state: 'hello',
+      lane: 'jev',
+      token: TOKEN,
+    });
     expect(outcome.ok).toBe(true);
     if (outcome.ok) {
       const answer = outcome.answers[3];
@@ -315,6 +353,7 @@ describe('live transport', () => {
     const outcome = await requestDecision({
       scenario: scenario('support-triage'),
       state: 'hello',
+      lane: 'jev',
       token: TOKEN,
     });
 
@@ -330,6 +369,7 @@ describe('live transport', () => {
     const outcome = await requestDecision({
       scenario: scenario('support-triage'),
       state: 'hello',
+      lane: 'jev',
       token: TOKEN,
     });
 
@@ -339,12 +379,48 @@ describe('live transport', () => {
     }
   });
 
+  it('rejects a response that answers for the wrong lane', async () => {
+    const target = scenario('support-triage');
+    respondWith({ ...successPayload(target), lane: 'llm' });
+
+    const outcome = await requestDecision({
+      scenario: target,
+      state: 'hello',
+      lane: 'jev',
+      token: TOKEN,
+    });
+
+    expect(outcome.ok).toBe(false);
+    if (!outcome.ok) {
+      expect(outcome.kind).toBe('invalid_response');
+      expect(outcome.message).toContain('"llm" lane');
+    }
+  });
+
+  it('accepts a response that echoes the requested lane', async () => {
+    const target = scenario('support-triage');
+    respondWith({ ...successPayload(target), lane: 'llm' });
+
+    const outcome = await requestDecision({
+      scenario: target,
+      state: 'hello',
+      lane: 'llm',
+      token: TOKEN,
+    });
+
+    expect(outcome.ok).toBe(true);
+    if (outcome.ok) {
+      expect(outcome.lane).toBe('llm');
+    }
+  });
+
   it('rejects a non-JSON body', async () => {
     fetchMock.mockResolvedValue(new Response('<html>502</html>', { status: 502 }));
 
     const outcome = await requestDecision({
       scenario: scenario('support-triage'),
       state: 'hello',
+      lane: 'jev',
       token: TOKEN,
     });
 

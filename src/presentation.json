@@ -133,7 +133,17 @@
       "title": "The experiment.",
       "subtitle": "Accuracy, misses, latency, and cost — measured together.",
       "pullQuote": "No headline without its workload.",
-      "cards": null,
+      "cards": [
+        {
+          "title": "BOTH LANES, LIVE — ONE SYNTHETIC CALL EACH",
+          "lines": [
+            "Jev — 217 ms provider · $0.0000216 · 515 in / 112 out",
+            "claude-haiku-4.5 via Amazon Bedrock — 3932 ms provider · $0.001793 · 1193 in / 120 out",
+            "Same input, same five questions, same request shape, run in parallel."
+          ],
+          "footer": "One call per arm. A smoke test of the comparison, not a benchmark: one sample measures nothing about accuracy, and the two arms agreed on the route in this run. The disagreement is scenario-dependent, so do not promise it."
+        }
+      ],
       "notes": [
         "Fixture mode has no measured model results: every metric there is null by design, not zero. Live mode reports real provider latency, tokens, and cost, labelled with the resolved model and request id.",
         "The experiment: independent labels, safe counterparts, a held-out subset, equivalent context, and all questions offered to both systems.",

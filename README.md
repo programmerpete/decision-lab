@@ -43,8 +43,7 @@ for the evaluation rules. No API key is needed.
   [verified transport contract](VERIFIED-TRANSPORT.md) for the future live phase.
 
 Not yet included: real benchmark results, question-count experiments, actual code
-reviews, redaction, tool execution, hybrid orchestration, or a live adapter for the LLM
-lane.
+reviews, redaction, tool execution, or hybrid orchestration.
 
 ## Live mode
 
@@ -58,12 +57,17 @@ choose **Live**, and enter the presenter token. Then submit as usual.
   never contacts the provider directly. The Worker enforces the model allowlist, a
   bearer token, an origin allowlist, a rate limit, a body-size limit, a daily spend
   ceiling, and timeouts.
-- Only the Jev lane has a live adapter. In live mode the LLM lane states plainly that
-  it has none, rather than showing a number it did not measure.
+- Both lanes have a live adapter and run in parallel on the same input, with the same
+  five questions and the same request shape. Each is labelled with its own provider,
+  resolved model, request id, provider latency, end-to-end duration, tokens, and
+  reported cost, and each completes independently — a failure in one never disturbs the
+  other.
 - A failed call renders the failure with its status, kind, and detail. It never falls
   back to fixture values, and a partly valid response is rejected whole.
-- A live result is labelled with the resolved model id, the request id, provider
-  latency, tokens, and reported cost.
+- The language model's probabilities and confidence are **self-reported** and are not
+  calibrated or directly comparable to the typed lane's. The lane says so on the card.
+- When the two arms disagree on the routing illustration, both outcomes are shown.
+  When they agree, one is shown, because there is nothing to compare.
 
 Verify the deployed endpoint by hand (this is the only command that spends money, and
 it never runs in CI):

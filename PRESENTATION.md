@@ -55,6 +55,26 @@ path. A second measurement from a different host came in at 450 ms end to end ag
 310 ms of provider latency — same code, same Worker, different route. Say "a few
 hundred milliseconds", and name the origin you measured from.
 
+### Both lanes, live
+
+The site now runs both arms in parallel on the same input and the same five questions,
+each labelled with its own provider, model, request id, latency, and reported cost:
+
+|                  | Jev              | claude-haiku-4.5  |
+| ---------------- | ---------------- | ----------------- |
+| Provider         | TypeSafe         | Amazon Bedrock    |
+| Provider latency | 217 ms           | 3932 ms           |
+| End to end       | 345 ms           | 4056 ms           |
+| Reported cost    | $0.0000216       | $0.001793         |
+| Tokens           | 515 in / 112 out | 1193 in / 120 out |
+
+That is roughly 18× slower and 83× more expensive on this workload. **It is one call per
+arm, so it is a smoke test of the comparison and not a benchmark.** The two arms agreed
+on the route in that run; the disagreement seen on the traffic-cop scenario is
+scenario-dependent, so do not promise a disagreement on stage. The durable difference
+is the order of magnitude in latency and cost, and the self-reported nature of the
+language model's probabilities.
+
 Label it for what it is: one call on synthetic input that proves transport and shape.
 It is not a benchmark and not a quality result. See
 [VERIFIED-TRANSPORT.md](VERIFIED-TRANSPORT.md).

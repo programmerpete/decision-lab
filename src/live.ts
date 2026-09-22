@@ -15,11 +15,11 @@
  *    response is rejected rather than rendered with holes.
  */
 
-import type { AnswerSet, Primitive, Scenario } from './domain';
+import type { AnswerSet, Lane, Primitive, Scenario } from './domain';
 
 export const LIVE_ENDPOINT = 'https://decision-lab-live.petersk.workers.dev';
 
-/** The worker allowlists this model. Sending `model` at all is a 400. */
+/** The worker allowlists one model per lane. Sending `model` at all is a 400. */
 export const LIVE_MODEL_SLUG = '~typesafe/jev-latest';
 
 export interface LiveRequestQuestion {
@@ -29,15 +29,18 @@ export interface LiveRequestQuestion {
 }
 
 export interface LiveRequest {
+  /** The worker defaults this to `jev`, so it is always sent explicitly. */
+  readonly lane: Lane;
   readonly state: string;
   readonly questions: Readonly<Record<string, LiveRequestQuestion>>;
 }
 
 /**
  * Derive the request from the same versioned question definitions the fixtures use, so
- * the live arm and the fixture arm ask semantically identical questions.
+ * every arm asks semantically identical questions about identical input. A fair
+ * comparison needs the same task, the same contract, and the same context.
  */
-export function buildLiveRequest(scenario: Scenario, state: string): LiveRequest {
+export function buildLiveRequest(scenario: Scenario, state: string, lane: Lane): LiveRequest {
   const questions: Record<string, LiveRequestQuestion> = {};
 
   for (const question of scenario.questions) {
@@ -67,7 +70,7 @@ export function buildLiveRequest(scenario: Scenario, state: string): LiveRequest
     };
   }
 
-  return { state, questions };
+  return { lane, state, questions };
 }
 
 export interface LiveUsage {
@@ -78,6 +81,8 @@ export interface LiveUsage {
 
 export interface LiveSuccess {
   readonly ok: true;
+  /** Which arm answered. Recorded so a response can never be attributed to the wrong lane. */
+  readonly lane: Lane;
   readonly provider: string;
   readonly model: string;
   readonly generationId: string;
@@ -246,13 +251,15 @@ function readUsage(raw: unknown): LiveUsage {
 export interface RequestOptions {
   readonly scenario: Scenario;
   readonly state: string;
+  /** Which arm to call: the typed decision model or the structured-output LLM. */
+  readonly lane: Lane;
   /** Held in memory for this session only. Never persisted, never bundled. */
   readonly token: string;
   readonly signal?: AbortSignal;
 }
 
 export async function requestDecision(options: RequestOptions): Promise<LiveOutcome> {
-  const { scenario, state, token, signal } = options;
+  const { scenario, state, lane, token, signal } = options;
   const startedAt = performance.now();
   const elapsed = () => Math.round(performance.now() - startedAt);
 
@@ -268,7 +275,7 @@ export async function requestDecision(options: RequestOptions): Promise<LiveOutc
         Authorization: `Bearer ${token.trim()}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(buildLiveRequest(scenario, state)),
+      body: JSON.stringify(buildLiveRequest(scenario, state, lane)),
       ...(signal ? { signal } : {}),
     });
   } catch (error) {
@@ -326,8 +333,20 @@ export async function requestDecision(options: RequestOptions): Promise<LiveOutc
     );
   }
 
+  // A response that names a different arm than the one requested must never be
+  // rendered: attributing the LLM's numbers to Jev (or the reverse) would misreport
+  // provenance on the one slide that depends on telling them apart.
+  if (typeof payload.lane === 'string' && payload.lane !== lane) {
+    return failure(
+      'invalid_response',
+      response.status,
+      `The endpoint answered for the "${payload.lane}" lane when "${lane}" was requested.`,
+    );
+  }
+
   return {
     ok: true,
+    lane,
     provider: typeof payload.provider === 'string' ? payload.provider : 'unknown',
     model: typeof payload.model === 'string' ? payload.model : 'unknown',
     generationId: typeof payload.generationId === 'string' ? payload.generationId : 'unreported',

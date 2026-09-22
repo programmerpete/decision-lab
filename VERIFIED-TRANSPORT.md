@@ -23,9 +23,17 @@ per minute (429), a daily spend ceiling that fails closed (503), and timeouts (5
 Its failure shape is `{ ok: false, kind, status, message, detail? }` and it
 structurally cannot carry answers, so a failure can never be mistaken for a result.
 
-The proxy's request shape is the same `{ state, questions }` body below, with no
-`model` field: sending one is a 400. Its success shape adds `provider`,
-`generationId`, `usage` (`inputTokens`, `outputTokens`, `cost`), and `latencyMs`.
+The proxy's request shape is the same `{ state, questions }` body below, with a `lane`
+field (`"jev"` or `"llm"`, defaulting to `"jev"`) and no `model` field: sending one is a 400. Each lane has its own model allowlist, so the typed slug is rejected on the LLM
+lane and vice versa. Its success shape adds `lane`, `provider`, `generationId`,
+`usage` (`inputTokens`, `outputTokens`, `cost`), and `latencyMs`.
+
+The LLM lane is pinned to `anthropic/claude-haiku-4.5`, chosen by measuring four
+candidates on the same request rather than from memory: reasoning models were an order
+of magnitude slower, which matters when someone is watching. Expect **2–4 seconds** on
+that lane against a few hundred milliseconds on the typed lane. Both arms receive
+identical input and identical questions; the rubric `legend` is derived server-side from
+the criteria sent, so both always carry one.
 
 Both accept `Authorization: Bearer <key>` and a JSON body of the same shape:
 

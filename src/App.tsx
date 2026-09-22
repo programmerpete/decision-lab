@@ -7,6 +7,7 @@ import type { LaneState } from './ResultLane';
 import {
   DEFAULT_THRESHOLD_PERCENT,
   FIXTURE_NOTICE,
+  LANES,
   LANE_ORDER,
   MAX_INPUT_LENGTH,
   MODE_STATEMENT,
@@ -17,12 +18,21 @@ import {
   evaluateFixture,
   exportFilename,
   formatCost,
+  formatPercent,
   illustrateRouting,
   routingDetail,
   routingSentence,
 } from './domain';
-import type { AnswerSet, EvaluationError, FixtureEvaluation, FixtureRun, Scenario } from './domain';
-import { LIVE_MODEL_SLUG, requestDecision } from './live';
+import type {
+  AnswerSet,
+  EvaluationError,
+  FixtureEvaluation,
+  FixtureRun,
+  Lane,
+  RoutingIllustration,
+  Scenario,
+} from './domain';
+import { requestDecision } from './live';
 import type { LiveFailure, LiveSuccess } from './live';
 import { DEFAULT_SCENARIO, SCENARIOS } from './scenarios';
 
@@ -32,7 +42,7 @@ import { DEFAULT_SCENARIO, SCENARIOS } from './scenarios';
 
 type Mode = 'fixture' | 'live';
 
-/** The Jev lane's live-call state. Fixture mode never touches this. */
+/** One arm's live-call state. Fixture mode never touches these. */
 type LiveLane =
   | { readonly kind: 'idle' }
   | { readonly kind: 'loading' }
@@ -48,6 +58,11 @@ type LiveLane =
       readonly input: string;
       readonly scenarioId: string;
     };
+
+const IDLE_LANES: Readonly<Record<Lane, LiveLane>> = {
+  jev: { kind: 'idle' },
+  llm: { kind: 'idle' },
+};
 
 /* -------------------------------------------------------------------------- */
 /* Views                                                                       */
@@ -144,7 +159,8 @@ interface ExploreProps {
   readonly token: string;
   readonly jevState: LaneState;
   readonly llmState: LaneState;
-  readonly routing: ReturnType<typeof illustrateRouting> | null;
+  readonly jevRouting: RoutingIllustration | null;
+  readonly llmRouting: RoutingIllustration | null;
   readonly liveSummary: string;
   readonly threshold: number;
   readonly exportJson: string | null;
@@ -168,7 +184,8 @@ function Explore({
   token,
   jevState,
   llmState,
-  routing,
+  jevRouting,
+  llmRouting,
   liveSummary,
   threshold,
   exportJson,
@@ -183,6 +200,29 @@ function Explore({
   onTokenChange,
 }: ExploreProps) {
   const selectedPreset = scenario.presets.find((preset) => preset.input === input);
+
+  // The two arms can disagree. When they do, show both outcomes side by side: the
+  // difference in confidence is what changes the routing decision, and that is the
+  // most useful thing on this card.
+  const lanesDisagree =
+    jevRouting !== null &&
+    llmRouting !== null &&
+    JSON.stringify(jevRouting) !== JSON.stringify(llmRouting);
+
+  const routingRows: readonly {
+    readonly lane: Lane | null;
+    readonly routing: RoutingIllustration;
+  }[] =
+    lanesDisagree && jevRouting && llmRouting
+      ? [
+          { lane: 'jev', routing: jevRouting },
+          { lane: 'llm', routing: llmRouting },
+        ]
+      : jevRouting
+        ? [{ lane: null, routing: jevRouting }]
+        : llmRouting
+          ? [{ lane: null, routing: llmRouting }]
+          : [];
 
   return (
     <>
@@ -274,7 +314,7 @@ function Explore({
               </span>
               <span>
                 {mode === 'live'
-                  ? `Live mode. The Jev lane calls a server-side proxy that holds the provider key and enforces the model allowlist (${LIVE_MODEL_SLUG}). The LLM lane has no live adapter in this build. Results are labelled with the resolved model, request id, latency, and reported cost.`
+                  ? 'Live mode. Both lanes call a server-side proxy that holds the provider key and enforces a per-lane model allowlist. Each lane is labelled with its own provider, resolved model, request id, latency, and reported cost, and neither falls back to fixtures.'
                   : FIXTURE_NOTICE}
               </span>
             </p>
@@ -470,16 +510,39 @@ function Explore({
                     </p>
 
                     <p className="policy__note">{THRESHOLD_DISCLAIMER}</p>
-                    <p className="policy__note">{routingDetail(routing, mode === 'fixture')}</p>
+                    {lanesDisagree ? null : (
+                      <p className="policy__note">
+                        {routingDetail(jevRouting, mode === 'fixture')}
+                      </p>
+                    )}
                   </div>
 
                   <div className="policy__outcome">
                     <p className="policy__outcome-label">
                       {mode === 'live' ? 'Outcome of this rule' : 'Illustrated outcome'}
                     </p>
-                    <p className="policy__outcome-value">
-                      {routing ? routingSentence(scenario, routing) : 'No result yet'}
-                    </p>
+
+                    {routingRows.length === 0 ? (
+                      <p className="policy__outcome-value">No result yet</p>
+                    ) : (
+                      routingRows.map((row) => (
+                        <div className="policy__outcome-row" key={row.lane ?? 'single'}>
+                          {row.lane ? (
+                            <span className="policy__outcome-lane">{LANES[row.lane].name}</span>
+                          ) : null}
+                          <p className="policy__outcome-value">
+                            {routingSentence(scenario, row.routing)}
+                            {lanesDisagree && row.routing.winningProbability !== null ? (
+                              <span className="policy__outcome-prob">
+                                {' '}
+                                · {formatPercent(row.routing.winningProbability)} winning option
+                              </span>
+                            ) : null}
+                          </p>
+                        </div>
+                      ))
+                    )}
+
                     <p className="policy__outcome-reason">
                       {mode === 'live'
                         ? liveSummary
@@ -699,8 +762,9 @@ function Method() {
               and requires a presenter token that is never stored or bundled.
             </li>
             <li>
-              There is no live adapter for the LLM lane, so that lane stays on fixtures in live mode
-              rather than showing a number it did not measure.
+              Both lanes have a live adapter and run in parallel on the same input. Each is labelled
+              with its own provider, resolved model, request id, latency, and reported cost, and
+              each completes independently.
             </li>
             <li>
               No latency, token, or cost measurement exists in fixture mode. Those fields are null,
@@ -740,6 +804,27 @@ function Method() {
               network. Quote the second one when describing a person&apos;s wait.
             </li>
           </ul>
+        </article>
+
+        <article className="card method-card method-card--wide">
+          <h3>The two lanes are not the same kind of measurement</h3>
+          <p>
+            The typed lane&apos;s probabilities are produced by a training objective aimed at
+            calibrated decisions. The language model&apos;s probabilities and confidence are{' '}
+            <strong>self-reported</strong>: they are the model&apos;s own claim about its answer,
+            and they are not calibrated or directly comparable. The lane says so on the card.
+          </p>
+          <p>
+            They are also not the same order of cost. In one measured pair of calls on the same
+            input, the typed lane returned in 217 ms for $0.0000216 while the language model took
+            3932 ms and $0.001793. That is one call per arm — a smoke test of the comparison, not a
+            benchmark — but the order of magnitude is the durable part.
+          </p>
+          <p>
+            When the two arms disagree on the routing illustration, both outcomes are shown. When
+            they agree, one outcome is shown, because there is nothing to compare. Neither outcome
+            is executed.
+          </p>
         </article>
 
         <article className="card method-card method-card--wide">
@@ -846,10 +931,12 @@ export default function App() {
   const [threshold, setThreshold] = useState(DEFAULT_THRESHOLD_PERCENT);
   const [mode, setMode] = useState<Mode>('fixture');
   const [token, setToken] = useState('');
-  const [liveLane, setLiveLane] = useState<LiveLane>({ kind: 'idle' });
+  const [liveRuns, setLiveRuns] = useState<Readonly<Record<Lane, LiveLane>>>(IDLE_LANES);
 
-  const abortRef = useRef<AbortController | null>(null);
-  const requestSeq = useRef(0);
+  // One abort path and one sequence per lane, so a slow LLM call cannot cancel or
+  // overwrite a fast typed call, and vice versa.
+  const abortRef = useRef<Record<Lane, AbortController | null>>({ jev: null, llm: null });
+  const seqRef = useRef<Record<Lane, number>>({ jev: 0, llm: 0 });
 
   useEffect(() => {
     const onHashChange = () => setView(viewFromHash());
@@ -857,7 +944,14 @@ export default function App() {
     return () => window.removeEventListener('hashchange', onHashChange);
   }, []);
 
-  useEffect(() => () => abortRef.current?.abort(), []);
+  useEffect(
+    () => () => {
+      for (const lane of LANE_ORDER) {
+        abortRef.current[lane]?.abort();
+      }
+    },
+    [],
+  );
 
   const navigate = useCallback((next: View) => {
     window.location.hash = next;
@@ -870,11 +964,13 @@ export default function App() {
    * and is never rendered.
    */
   const resetOutputs = useCallback(() => {
-    abortRef.current?.abort();
-    abortRef.current = null;
-    requestSeq.current += 1;
+    for (const lane of LANE_ORDER) {
+      abortRef.current[lane]?.abort();
+      abortRef.current[lane] = null;
+      seqRef.current[lane] += 1;
+    }
     setResult(undefined);
-    setLiveLane({ kind: 'idle' });
+    setLiveRuns(IDLE_LANES);
   }, []);
 
   const active = result && result.scenarioId === scenario.id ? result.evaluation : undefined;
@@ -914,123 +1010,143 @@ export default function App() {
     [resetOutputs],
   );
 
+  /** Fire one arm. Each lane completes independently and never blocks the other. */
+  const startLane = useCallback(
+    (lane: Lane, target: Scenario, submittedInput: string) => {
+      abortRef.current[lane]?.abort();
+      const controller = new AbortController();
+      abortRef.current[lane] = controller;
+
+      const requestId = seqRef.current[lane] + 1;
+      seqRef.current[lane] = requestId;
+
+      setLiveRuns((current) => ({ ...current, [lane]: { kind: 'loading' } }));
+
+      void requestDecision({
+        scenario: target,
+        state: submittedInput,
+        lane,
+        token,
+        signal: controller.signal,
+      }).then((outcome) => {
+        // A late response for a replaced input must never reach the screen.
+        if (seqRef.current[lane] !== requestId) {
+          return;
+        }
+
+        const next: LiveLane = outcome.ok
+          ? {
+              kind: 'success',
+              run: outcome,
+              input: submittedInput,
+              scenarioId: target.id,
+            }
+          : outcome.kind === 'cancelled'
+            ? { kind: 'idle' }
+            : {
+                kind: 'error',
+                failure: outcome,
+                input: submittedInput,
+                scenarioId: target.id,
+              };
+
+        setLiveRuns((current) => ({ ...current, [lane]: next }));
+      });
+    },
+    [token],
+  );
+
   const handleSubmit = useCallback(() => {
     if (mode === 'fixture') {
       setResult({ scenarioId: scenario.id, evaluation: evaluateFixture(scenario, input) });
       return;
     }
 
-    abortRef.current?.abort();
-    const controller = new AbortController();
-    abortRef.current = controller;
+    // Both arms run in parallel on the same input, each with its own abort path and
+    // its own completion. The LLM lane takes seconds where the typed lane takes
+    // milliseconds, so serialising them would make the demo needlessly slow and would
+    // hide the difference the comparison exists to show.
+    for (const lane of LANE_ORDER) {
+      startLane(lane, scenario, input);
+    }
+  }, [mode, scenario, input, startLane]);
 
-    const requestId = requestSeq.current + 1;
-    requestSeq.current = requestId;
-
-    const submittedInput = input;
-    const submittedScenarioId = scenario.id;
-
-    setLiveLane({ kind: 'loading' });
-
-    void requestDecision({
-      scenario,
-      state: submittedInput,
-      token,
-      signal: controller.signal,
-    }).then((outcome) => {
-      // A late response for a replaced input must never reach the screen.
-      if (requestSeq.current !== requestId) {
-        return;
+  const laneStateFor = useCallback(
+    (lane: Lane): LaneState => {
+      if (mode === 'fixture') {
+        return run
+          ? { kind: 'fixture', illustration: run.illustration }
+          : { kind: 'empty', illustrative: true };
       }
 
-      if (outcome.ok) {
-        setLiveLane({
-          kind: 'success',
-          run: outcome,
-          input: submittedInput,
-          scenarioId: submittedScenarioId,
-        });
-      } else if (outcome.kind !== 'cancelled') {
-        setLiveLane({
+      const state = liveRuns[lane];
+
+      if (state.kind === 'loading') {
+        return { kind: 'loading' };
+      }
+
+      const isCurrent =
+        (state.kind === 'success' || state.kind === 'error') &&
+        state.input === input &&
+        state.scenarioId === scenario.id;
+
+      if (state.kind === 'success' && isCurrent) {
+        return {
+          kind: 'live',
+          answers: state.run.answers,
+          provenance: {
+            provider: state.run.provider,
+            model: state.run.model,
+            generationId: state.run.generationId,
+            latencyMs: state.run.latencyMs,
+            clientDurationMs: state.run.clientDurationMs,
+            costUsd: state.run.usage.costUsd,
+            inputTokens: state.run.usage.inputTokens,
+            outputTokens: state.run.usage.outputTokens,
+          },
+        };
+      }
+
+      if (state.kind === 'error' && isCurrent) {
+        return {
           kind: 'error',
-          failure: outcome,
-          input: submittedInput,
-          scenarioId: submittedScenarioId,
-        });
+          status: state.failure.status,
+          message: state.failure.message,
+          detail: state.failure.detail,
+        };
       }
-    });
-  }, [mode, scenario, input, token]);
 
-  const liveIsCurrent =
-    (liveLane.kind === 'success' || liveLane.kind === 'error') &&
-    liveLane.input === input &&
-    liveLane.scenarioId === scenario.id;
-
-  const jevState: LaneState = useMemo(() => {
-    const empty: LaneState = { kind: 'empty', illustrative: mode === 'fixture' };
-
-    if (mode === 'fixture') {
-      return run ? { kind: 'fixture', illustration: run.illustration } : empty;
-    }
-
-    if (liveLane.kind === 'loading') {
-      return { kind: 'loading' };
-    }
-
-    if (liveLane.kind === 'success' && liveIsCurrent) {
-      return {
-        kind: 'live',
-        answers: liveLane.run.answers,
-        provenance: {
-          provider: liveLane.run.provider,
-          model: liveLane.run.model,
-          generationId: liveLane.run.generationId,
-          latencyMs: liveLane.run.latencyMs,
-          clientDurationMs: liveLane.run.clientDurationMs,
-          costUsd: liveLane.run.usage.costUsd,
-          inputTokens: liveLane.run.usage.inputTokens,
-          outputTokens: liveLane.run.usage.outputTokens,
-        },
-      };
-    }
-
-    if (liveLane.kind === 'error' && liveIsCurrent) {
-      return {
-        kind: 'error',
-        status: liveLane.failure.status,
-        message: liveLane.failure.message,
-        detail: liveLane.failure.detail,
-      };
-    }
-
-    return empty;
-  }, [mode, run, liveLane, liveIsCurrent]);
-
-  const llmState: LaneState = useMemo(() => {
-    if (mode === 'fixture') {
-      return run
-        ? { kind: 'fixture', illustration: run.illustration }
-        : { kind: 'empty', illustrative: true };
-    }
-
-    return {
-      kind: 'unavailable',
-      reason:
-        'This build wires a live adapter for the Jev lane only. The LLM lane stays on fixtures so the two can never be confused.',
-    };
-  }, [mode, run]);
-
-  const activeAnswers: AnswerSet | null =
-    mode === 'live'
-      ? liveLane.kind === 'success' && liveIsCurrent
-        ? liveLane.run.answers
-        : null
-      : (run?.illustration.answers ?? null);
-
-  const routing = useMemo(
-    () => (activeAnswers ? illustrateRouting(scenario, activeAnswers, threshold) : null),
-    [activeAnswers, scenario, threshold],
+      return { kind: 'empty', illustrative: false };
+    },
+    [mode, run, liveRuns, input, scenario.id],
   );
+
+  const jevState = laneStateFor('jev');
+  const llmState = laneStateFor('llm');
+
+  const answersFor = useCallback(
+    (lane: Lane): AnswerSet | null => {
+      if (mode === 'fixture') {
+        return run?.illustration.answers ?? null;
+      }
+      const state = liveRuns[lane];
+      return state.kind === 'success' && state.input === input && state.scenarioId === scenario.id
+        ? state.run.answers
+        : null;
+    },
+    [mode, run, liveRuns, input, scenario.id],
+  );
+
+  const routeFor = useCallback(
+    (lane: Lane): RoutingIllustration | null => {
+      const answers = answersFor(lane);
+      return answers ? illustrateRouting(scenario, answers, threshold) : null;
+    },
+    [answersFor, scenario, threshold],
+  );
+
+  const jevRouting = routeFor('jev');
+  const llmRouting = routeFor('llm');
 
   const exportJson = useMemo(
     () =>
@@ -1063,25 +1179,53 @@ export default function App() {
     if (mode !== 'live') {
       return '';
     }
-    if (liveLane.kind === 'loading') {
-      return 'Waiting for the provider. One request carries all five judgments.';
-    }
-    if (liveLane.kind === 'success' && liveIsCurrent) {
-      const called = liveLane.run;
-      return `Live: ${called.provider} · ${called.model} · ${called.latencyMs} ms provider · ${called.clientDurationMs} ms end to end · ${formatCost(called.usage.costUsd)} reported · request ${called.generationId}`;
-    }
-    if (liveLane.kind === 'error' && liveIsCurrent) {
-      return `Live call failed (HTTP ${liveLane.failure.status}): ${liveLane.failure.message}`;
-    }
-    return 'Live mode is on. Submit to call the provider.';
-  }, [mode, liveLane, liveIsCurrent]);
 
-  const announcement =
-    mode === 'fixture' && run && routing
-      ? `Illustrative comparison shown. ${routingSentence(scenario, routing)}`
-      : mode === 'live' && liveLane.kind === 'success' && liveIsCurrent && routing
-        ? `Live call complete. ${routingSentence(scenario, routing)}`
+    const jev = liveRuns.jev;
+    const llm = liveRuns.llm;
+
+    if (jev.kind === 'loading' || llm.kind === 'loading') {
+      const waiting = jev.kind === 'loading' ? 'the typed lane' : 'the language model';
+      return `Waiting for ${waiting}. The two arms run in parallel and finish independently.`;
+    }
+
+    if (jev.kind === 'success' && llm.kind === 'success') {
+      return `Live: ${jev.run.model} in ${jev.run.clientDurationMs} ms for ${formatCost(jev.run.usage.costUsd)}, against ${llm.run.model} via ${llm.run.provider} in ${llm.run.clientDurationMs} ms for ${formatCost(llm.run.usage.costUsd)}.`;
+    }
+
+    const failed = [jev, llm].find((entry) => entry.kind === 'error');
+    if (failed && failed.kind === 'error') {
+      return `Live call failed (HTTP ${failed.failure.status}): ${failed.failure.message}`;
+    }
+
+    if (jev.kind === 'success') {
+      return `Typed lane answered in ${jev.run.clientDurationMs} ms. The other lane has not returned.`;
+    }
+
+    if (llm.kind === 'success') {
+      return `Language model answered in ${llm.run.clientDurationMs} ms. The other lane has not returned.`;
+    }
+
+    return 'Live mode is on. Submit to call both providers.';
+  }, [mode, liveRuns]);
+
+  const announcement = useMemo(() => {
+    if (mode === 'fixture') {
+      return run && jevRouting
+        ? `Illustrative comparison shown. ${routingSentence(scenario, jevRouting)}`
         : '';
+    }
+
+    if (liveRuns.jev.kind === 'loading' || liveRuns.llm.kind === 'loading') {
+      return 'Live comparison in progress.';
+    }
+
+    if (jevRouting) {
+      return `Live comparison complete. ${routingSentence(scenario, jevRouting)}`;
+    }
+
+    const failed = liveRuns.jev.kind === 'error' ? liveRuns.jev : null;
+    return failed ? `Live call failed: ${failed.failure.message}` : '';
+  }, [mode, run, jevRouting, scenario, liveRuns]);
 
   return (
     <div className="shell">
@@ -1102,7 +1246,8 @@ export default function App() {
             token={token}
             jevState={jevState}
             llmState={llmState}
-            routing={routing}
+            jevRouting={jevRouting}
+            llmRouting={llmRouting}
             liveSummary={liveSummary}
             threshold={threshold}
             exportJson={exportJson}

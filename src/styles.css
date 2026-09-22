@@ -1061,6 +1061,17 @@ pre {
   text-align: right;
 }
 
+.lane__caveat {
+  margin: 0.85rem 0 0;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--surface-3);
+  font-size: 0.8rem;
+  line-height: 1.55;
+  color: var(--text-muted);
+}
+
 .lane__footer {
   margin-top: auto;
   border-top: 1px solid var(--border);
@@ -1145,6 +1156,27 @@ pre {
 .policy__outcome-value {
   font-size: 1.3rem;
   color: var(--accent-bright);
+}
+
+.policy__outcome-row + .policy__outcome-row {
+  margin-top: 0.6rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--border);
+}
+
+.policy__outcome-lane {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 0.15rem;
+}
+
+.policy__outcome-prob {
+  font-size: 0.82rem;
+  color: var(--text-muted);
 }
 
 .policy__outcome-reason {

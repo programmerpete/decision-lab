@@ -133,6 +133,14 @@ Selection grants no permissions and runs nothing.
 
 Accuracy, misses, latency, and cost — measured together.
 
+### BOTH LANES, LIVE — ONE SYNTHETIC CALL EACH
+
+- Jev — 217 ms provider · $0.0000216 · 515 in / 112 out
+- claude-haiku-4.5 via Amazon Bedrock — 3932 ms provider · $0.001793 · 1193 in / 120 out
+- Same input, same five questions, same request shape, run in parallel.
+
+> One call per arm. A smoke test of the comparison, not a benchmark: one sample measures nothing about accuracy, and the two arms agreed on the route in this run. The disagreement is scenario-dependent, so do not promise it.
+
 > No headline without its workload.
 
 **Speaker notes**

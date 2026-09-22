@@ -42,8 +42,7 @@ export type LaneState =
       readonly status: number;
       readonly message: string;
       readonly detail: string | null;
-    }
-  | { readonly kind: 'unavailable'; readonly reason: string };
+    };
 
 interface JudgmentProps {
   readonly question: QuestionSet[number];
@@ -168,6 +167,7 @@ function LaneFooter({ state }: { readonly state: LaneState }) {
         <Metric label="End to end" value={`${state.provenance.clientDurationMs} ms`} />
         <Metric label="API cost" value={`${formatCost(state.provenance.costUsd)} reported`} />
         <Metric label="Live connection" value="Configured" />
+        <Metric label="Provider" value={state.provenance.provider} />
         <Metric label="Model" value={state.provenance.model} />
         <Metric
           label="Tokens"
@@ -228,36 +228,41 @@ function LaneBody({
     );
   }
 
-  if (state.kind === 'unavailable') {
-    return (
-      <div className="lane__empty">
-        <strong>No live adapter for this lane.</strong>
-        <span>{state.reason}</span>
-      </div>
-    );
-  }
-
   if (state.kind === 'fixture' || state.kind === 'live') {
     const illustrative = state.kind === 'fixture';
     const answers = illustrative ? state.illustration.answers : state.answers;
 
     return (
-      <ol className="judgments">
-        {questions.map((question, index) => {
-          const answer = answers[index];
-          if (!answer) {
-            return null;
-          }
-          return (
-            <Judgment
-              key={`${lane}-${question.id}`}
-              question={question}
-              answer={answer}
-              illustrative={illustrative}
-            />
-          );
-        })}
-      </ol>
+      <>
+        <ol className="judgments">
+          {questions.map((question, index) => {
+            const answer = answers[index];
+            if (!answer) {
+              return null;
+            }
+            return (
+              <Judgment
+                key={`${lane}-${question.id}`}
+                question={question}
+                answer={answer}
+                illustrative={illustrative}
+              />
+            );
+          })}
+        </ol>
+
+        {/*
+          The caveat attaches to this lane only. The two arms do not produce the same
+          kind of number, and presenting them as interchangeable would be the single
+          most misleading thing this comparison could do.
+        */}
+        {!illustrative && lane === 'llm' ? (
+          <p className="lane__caveat">
+            Probabilities and confidence here are self-reported by the language model. They are not
+            calibrated and not directly comparable to the other lane&apos;s.
+          </p>
+        ) : null}
+      </>
     );
   }
 
