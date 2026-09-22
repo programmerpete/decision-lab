@@ -7,6 +7,7 @@
     {
       "number": 1,
       "timing": "0–2 min",
+      "accent": "green",
       "eyebrow": "FRAMING",
       "kicker": null,
       "title": "Does this decision need a conversation?",
@@ -22,7 +23,115 @@
     },
     {
       "number": 2,
-      "timing": "2–4 min",
+      "timing": "2–3.5 min",
+      "accent": "violet",
+      "eyebrow": "KINDS OF REASONING",
+      "kicker": null,
+      "title": "Fast decisions. Slow reasoning. Different jobs.",
+      "subtitle": "Kahneman's System 1 and System 2 describe two kinds of thinking. TypeSafe named its model class after the first, and argues it can be made reliable rather than error-prone.",
+      "pullQuote": "Chat is a human interface. Automation needs a machine one.",
+      "cards": [
+        {
+          "title": "TWO KINDS OF THINKING",
+          "lines": [
+            "System 1 — fast, intuitive, pattern-matching. Where a route or a label comes from.",
+            "System 2 — slow, deliberate, step-by-step. Where a proof or a plan comes from.",
+            "Reasoning models moved System 2 into software. Decisions were left behind."
+          ],
+          "footer": "The framing is Daniel Kahneman's. TypeSafe's own gloss is that System 1 thinking has always implied error-prone, and that a System One Model can be trained to be calibrated instead."
+        },
+        {
+          "title": "TWO INTERFACES",
+          "lines": [
+            "A chat model answers a person, in prose, at human speed.",
+            "A decision model answers software, in types, at software speed.",
+            "TypeSafe calls the second target Machine Native Intelligence."
+          ],
+          "footer": "Their stated expectation: large-scale automation is closer to 99% machine-to-machine than to a conversation."
+        }
+      ],
+      "notes": [
+        "Kahneman's Thinking, Fast and Slow is where the System 1 / System 2 vocabulary comes from. TypeSafe named the model class after it.",
+        "The useful part is not the metaphor, it is the interface: a person reads prose, software reads a value. Optimising for one does not optimise for the other.",
+        "Say plainly that System 1 in psychology implies error-prone, and that TypeSafe's claim is that this is a training-target problem rather than a law. That claim is theirs, and it is what the rest of the deck tests.",
+        "Bridge to the next slide: this is the bet, and here is where it came from."
+      ]
+    },
+    {
+      "number": 3,
+      "timing": "3.5–5 min",
+      "accent": "amber",
+      "eyebrow": "WHERE IT CAME FROM",
+      "kicker": null,
+      "title": "The people who built chat, betting against chat.",
+      "subtitle": "Diogo Almeida co-invented the method that turned language models into assistants, then spent two years in stealth on the opposite problem.",
+      "pullQuote": "\"Models have been superhuman at chat for years, so where is all the automation?\"",
+      "cards": [
+        {
+          "title": "THREE POST-TRAINING PATHS",
+          "lines": [
+            "RLHF — human feedback. Produced InstructGPT and ChatGPT. Optimises for what people prefer to read.",
+            "RLVR — verifiable rewards. Produced reasoning models. Strong at maths, slower and dearer.",
+            "RLCD — calibrated decisions. TypeSafe's path. Returns decisions and probabilities, not text."
+          ],
+          "footer": "TypeSafe's stated criticism of RLHF: preference optimisation can reward sycophancy and confident-sounding hallucination, and it narrows the output distribution — mode dropping."
+        },
+        {
+          "title": "THE TIMELINE",
+          "lines": [
+            "RLHF and InstructGPT — the work that led to ChatGPT.",
+            "Two years in stealth building a different stack.",
+            "15 September 2026 — Jev released in early access."
+          ],
+          "footer": "Jev is named after William Stanley Jevons, for the idea that cheaper intelligence creates more demand for it rather than less."
+        }
+      ],
+      "notes": [
+        "The quote on this slide is verbatim from TypeSafe's launch post. It is the question the company is built on.",
+        "RLHF is the path that made assistants work, and Almeida co-invented it. That is the credibility argument, and it is also why the criticism of it carries weight.",
+        "The three-path framing is theirs. Present it as their position, not as settled science: the claim that RLHF's objective is wrong for automation is an argument, not a result.",
+        "RLCD is the thing to remember: reinforcement learning for calibrated decisions. Calibrated is doing the work in that phrase."
+      ]
+    },
+    {
+      "number": 4,
+      "timing": "5–6.5 min",
+      "accent": "blue",
+      "eyebrow": "HOW IT WORKS",
+      "kicker": null,
+      "title": "All the answers at once, inside a fixed shape.",
+      "subtitle": "A language model writes one token at a time and you hope the result parses. A decision model is handed the shape in advance and fills it in a single pass.",
+      "pullQuote": "The model never makes type errors.",
+      "cards": [
+        {
+          "title": "TWO SAMPLING MODES",
+          "lines": [
+            "Sequential — one token at a time, each conditioned on the last. Flexible, slow, and free to go off the rails.",
+            "Parallel — every output produced in a single query. Constrained, fast, and hardware-aware."
+          ],
+          "footer": "This is the mechanical reason for the speed difference, and the reason several judgments over one state cost one round trip."
+        },
+        {
+          "title": "WHAT CALIBRATED MEANS",
+          "lines": [
+            "Across many predictions, outcomes given 0.8 should happen about 80% of the time.",
+            "Outcomes given 0.2 should happen about 20% of the time.",
+            "That is a statement about groups of predictions, never a guarantee about one answer."
+          ],
+          "footer": "Which is why a threshold routes on uncertainty rather than treating a high number as permission."
+        }
+      ],
+      "notes": [
+        "The pull quote is TypeSafe's own phrasing. The claim is narrower than it sounds: the shape is fixed before the query runs, so an out-of-schema value is not possible. That is not the same as being correct.",
+        "Calibration is the part worth slowing down on. 0.8 means right about 80% of the time across many predictions — not 80% certain about this one. The last bullet is the honest caveat and it is on the slide.",
+        "Everything in the vendor's cost and speed claims is attributed vendor context, not our measurement. The deck keeps those numbers on the Method surface.",
+        "Bridge: that is the machinery. Here is what it actually returns."
+      ]
+    },
+    {
+      "number": 5,
+      "timing": "6.5–8 min",
+      "accent": "green",
       "eyebrow": "THREE BUILDING BLOCKS",
       "kicker": null,
       "title": "Choice. Score. Noul.",
@@ -58,8 +167,9 @@
       ]
     },
     {
-      "number": 3,
-      "timing": "4–7 min",
+      "number": 6,
+      "timing": "8–10.5 min",
+      "accent": "green",
       "eyebrow": "01 / SUPPORT",
       "kicker": "SUPPORT",
       "title": "One ticket. Five judgments.",
@@ -75,8 +185,9 @@
       ]
     },
     {
-      "number": 4,
-      "timing": "7–9 min",
+      "number": 7,
+      "timing": "10.5–12 min",
+      "accent": "blue",
       "eyebrow": "02 / CODE REVIEW",
       "kicker": "CODE REVIEW",
       "title": "Triage the risk. Keep the reviewer.",
@@ -92,8 +203,9 @@
       ]
     },
     {
-      "number": 5,
-      "timing": "9–12 min",
+      "number": 8,
+      "timing": "12–13.5 min",
+      "accent": "amber",
       "eyebrow": "03 / MODERATION",
       "kicker": "MODERATION",
       "title": "Context changes the decision.",
@@ -109,8 +221,9 @@
       ]
     },
     {
-      "number": 6,
-      "timing": "12–14 min",
+      "number": 9,
+      "timing": "13.5–15 min",
+      "accent": "violet",
       "eyebrow": "04 / AGENT TOOLS",
       "kicker": "AGENT TOOLS",
       "title": "A catalogue you can inspect.",
@@ -126,8 +239,9 @@
       ]
     },
     {
-      "number": 7,
-      "timing": "14–17 min",
+      "number": 10,
+      "timing": "15–17.5 min",
+      "accent": "green",
       "eyebrow": "EVIDENCE",
       "kicker": null,
       "title": "The experiment.",
@@ -162,8 +276,9 @@
       ]
     },
     {
-      "number": 8,
-      "timing": "17–20 min",
+      "number": 11,
+      "timing": "17.5–20 min",
+      "accent": "green",
       "eyebrow": "CLOSE",
       "kicker": null,
       "title": "Use each component for its strengths.",

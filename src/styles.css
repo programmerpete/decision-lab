@@ -1394,8 +1394,13 @@ pre {
 }
 
 .slide {
+  --slide-accent: var(--accent);
+  --slide-accent-bright: var(--accent-bright);
+  --slide-accent-soft: rgba(201, 232, 168, 0.14);
+  --slide-accent-line: var(--accent-line);
+
   position: relative;
-  min-height: clamp(320px, 48vh, 520px);
+  min-height: clamp(340px, 50vh, 560px);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   padding: clamp(1.5rem, 4vw, 3.5rem);
@@ -1405,8 +1410,31 @@ pre {
   gap: 1rem;
   overflow: hidden;
   background:
-    linear-gradient(135deg, rgba(201, 232, 168, 0.14), transparent 52%),
+    linear-gradient(135deg, var(--slide-accent-soft), transparent 54%),
     linear-gradient(160deg, var(--surface-3), var(--surface) 62%);
+}
+
+/* Each slide carries its own accent, so colour distinguishes the sections of the talk
+   rather than decorating them uniformly. */
+.slide[data-accent='amber'] {
+  --slide-accent: #e8c98a;
+  --slide-accent-bright: #f8e4bb;
+  --slide-accent-soft: rgba(232, 201, 138, 0.14);
+  --slide-accent-line: rgba(232, 201, 138, 0.5);
+}
+
+.slide[data-accent='blue'] {
+  --slide-accent: #9ecbe8;
+  --slide-accent-bright: #c9e5f8;
+  --slide-accent-soft: rgba(158, 203, 232, 0.14);
+  --slide-accent-line: rgba(158, 203, 232, 0.5);
+}
+
+.slide[data-accent='violet'] {
+  --slide-accent: #c3a8e8;
+  --slide-accent-bright: #dfccf8;
+  --slide-accent-soft: rgba(195, 168, 232, 0.14);
+  --slide-accent-line: rgba(195, 168, 232, 0.5);
 }
 
 .slide::after {
@@ -1414,25 +1442,27 @@ pre {
   position: absolute;
   inset-inline: 0;
   bottom: 0;
-  height: 1px;
-  background: linear-gradient(90deg, var(--accent-line), transparent);
+  height: 2px;
+  background: linear-gradient(90deg, var(--slide-accent-line), transparent);
 }
 
 .slide__eyebrow {
   font-family: var(--font-mono);
-  font-size: 0.72rem;
-  letter-spacing: 0.14em;
+  font-size: 0.8rem;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--accent);
+  color: var(--slide-accent);
 }
 
 .slide__title {
-  font-size: clamp(1.9rem, 4.4vw, 3.4rem);
+  font-size: clamp(2.1rem, 4.8vw, 3.8rem);
   max-width: 22ch;
+  color: var(--text);
 }
 
 .slide__sub {
-  font-size: clamp(0.95rem, 1.4vw, 1.1rem);
+  font-size: clamp(1rem, 1.5vw, 1.2rem);
+  line-height: 1.5;
   color: var(--text-muted);
   max-width: 52ch;
 }
@@ -1456,10 +1486,10 @@ pre {
 
 .slide-card__title {
   font-family: var(--font-mono);
-  font-size: 0.7rem;
+  font-size: 0.74rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--accent);
+  color: var(--slide-accent);
 }
 
 .slide-card__lines {
@@ -1468,7 +1498,7 @@ pre {
   display: flex;
   flex-direction: column;
   gap: 0.3rem;
-  font-size: 0.85rem;
+  font-size: 0.88rem;
   color: var(--text-muted);
 }
 
@@ -1489,20 +1519,27 @@ pre {
 
 .slide__kicker {
   font-family: var(--font-mono);
-  font-size: 0.7rem;
-  letter-spacing: 0.14em;
+  font-size: 0.74rem;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--text-dim);
+  color: var(--slide-accent);
   margin-top: 0.85rem;
 }
 
+/*
+  The pull quote is the message of the slide, so it gets the accent colour and the
+  largest type after the title. The title names the topic; this is the line to remember.
+*/
 .slide__quote {
-  margin-top: 0.4rem;
-  padding-left: 1rem;
-  border-left: 2px solid var(--accent-line);
-  font-size: clamp(0.9rem, 1.3vw, 1.02rem);
-  color: var(--accent-bright);
-  max-width: 48ch;
+  margin-top: 0.6rem;
+  padding-left: clamp(0.9rem, 1.6vw, 1.4rem);
+  border-left: 3px solid var(--slide-accent);
+  font-size: clamp(1.35rem, 2.9vw, 2.2rem);
+  font-weight: 450;
+  line-height: 1.22;
+  letter-spacing: -0.015em;
+  color: var(--slide-accent-bright);
+  max-width: 34ch;
 }
 
 .slide-controls {

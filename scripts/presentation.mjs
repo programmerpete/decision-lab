@@ -30,7 +30,8 @@ statement, and the rehearsal guidance live in [PRESENTATION.md](PRESENTATION.md)
 function renderSlide(slide) {
   const lines = [`## ${String(slide.number).padStart(2, '0')} · ${slide.title}`, ''];
   lines.push(`**Timing:** ${slide.timing}  `);
-  lines.push(`**Eyebrow:** ${slide.eyebrow}`);
+  lines.push(`**Eyebrow:** ${slide.eyebrow}  `);
+  lines.push(`**Accent:** ${slide.accent}`);
 
   if (slide.kicker) {
     lines.push(`**Kicker:** ${slide.kicker}`);

@@ -5,19 +5,30 @@ import { SLIDES, TALK } from '../../src/Presentation';
 /** The run-sheet timings from PRESENTATION.md, in order. */
 const RUN_SHEET_TIMINGS = [
   '0–2 min',
-  '2–4 min',
-  '4–7 min',
-  '7–9 min',
-  '9–12 min',
-  '12–14 min',
-  '14–17 min',
-  '17–20 min',
+  '2–3.5 min',
+  '3.5–5 min',
+  '5–6.5 min',
+  '6.5–8 min',
+  '8–10.5 min',
+  '10.5–12 min',
+  '12–13.5 min',
+  '13.5–15 min',
+  '15–17.5 min',
+  '17.5–20 min',
 ];
 
+function slideTitled(title: string) {
+  const found = SLIDES.find((slide) => slide.title === title);
+  if (!found) {
+    throw new Error(`No slide titled "${title}".`);
+  }
+  return found;
+}
+
 describe('presentation', () => {
-  it('has eight slides numbered in order', () => {
-    expect(SLIDES).toHaveLength(8);
-    expect(SLIDES.map((slide) => slide.number)).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
+  it('numbers every slide in order', () => {
+    expect(SLIDES.length).toBeGreaterThanOrEqual(8);
+    expect(SLIDES.map((slide) => slide.number)).toEqual(SLIDES.map((_, index) => index + 1));
   });
 
   it('keeps the run-sheet timings', () => {
@@ -50,8 +61,8 @@ describe('presentation', () => {
   });
 
   it('attributes the live smoke test as a smoke test, not a benchmark', () => {
-    const slideTwo = SLIDES[1];
-    const cards = slideTwo?.cards ?? [];
+    const primitives = slideTitled('Choice. Score. Noul.');
+    const cards = primitives.cards ?? [];
     const liveCall = cards.find((card) => card.title === 'ONE VERIFIED LIVE CALL');
 
     expect(liveCall).toBeDefined();
@@ -60,7 +71,7 @@ describe('presentation', () => {
   });
 
   it('shows both recorded runs, so either live outcome is predicted', () => {
-    const slideSeven = SLIDES[6];
+    const experiment = slideTitled('The experiment.');
     const allText = JSON.stringify(SLIDES);
 
     // A presenter who reproduces the demo live may get either result. The deck shows
@@ -76,14 +87,45 @@ describe('presentation', () => {
     expect(allText).toContain('reproduced independently');
 
     // The stable claim is separated from the unstable one.
-    expect(slideSeven?.cards?.some((card) => card.title === 'WHAT IS STABLE ACROSS RUNS')).toBe(
+    expect(experiment.cards?.some((card) => card.title === 'WHAT IS STABLE ACROSS RUNS')).toBe(
       true,
     );
   });
 
+  it('explains where Jev came from and how it works', () => {
+    const allText = JSON.stringify(SLIDES);
+
+    // The origin and mechanics material, following the structure of the reference talk.
+    expect(allText).toContain('System 1');
+    expect(allText).toContain('System 2');
+    expect(allText).toContain('RLCD');
+    expect(allText).toContain('calibrated decisions');
+    expect(allText).toContain('never makes type errors');
+    expect(allText).toContain('single query');
+  });
+
+  it('attributes the vendor framing rather than asserting it', () => {
+    const origin = slideTitled('The people who built chat, betting against chat.');
+
+    // The System One framing and the criticism of RLHF are TypeSafe's position, so the
+    // notes must say so rather than presenting them as settled.
+    const notes = origin.notes.join(' ');
+    expect(notes).toContain('theirs');
+    expect(notes).toContain('not as settled science');
+  });
+
+  it('gives every slide an accent from the palette', () => {
+    const allowed = new Set(['green', 'amber', 'blue', 'violet']);
+    for (const slide of SLIDES) {
+      expect(allowed.has(slide.accent)).toBe(true);
+    }
+    // Colour is doing work, so the deck is not monochrome.
+    expect(new Set(SLIDES.map((slide) => slide.accent)).size).toBeGreaterThan(1);
+  });
+
   it('confines vendor speed and cost claims to attributed context', () => {
-    const slideSeven = SLIDES[6];
-    const notes = (slideSeven?.notes ?? []).join(' ');
+    const experiment = slideTitled('The experiment.');
+    const notes = experiment.notes.join(' ');
 
     expect(notes).toContain('193.6×');
     expect(notes).toContain('not our measurements');

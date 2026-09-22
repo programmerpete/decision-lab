@@ -11,6 +11,8 @@ export interface SlideCard {
 export interface Slide {
   readonly number: number;
   readonly timing: string;
+  /** Which accent the slide uses. Colour carries meaning, so it is explicit data. */
+  readonly accent: SlideAccent;
   readonly eyebrow: string;
   readonly kicker: string | null;
   readonly title: string;
@@ -20,8 +22,38 @@ export interface Slide {
   readonly notes: readonly string[];
 }
 
-/** Canonical slide content. `PRESENTATION-SLIDES.md` is generated from this. */
-export const SLIDES: readonly Slide[] = data.slides;
+export type SlideAccent = 'green' | 'amber' | 'blue' | 'violet';
+
+const ACCENTS: readonly SlideAccent[] = ['green', 'amber', 'blue', 'violet'];
+
+function isAccent(value: string): value is SlideAccent {
+  return (ACCENTS as readonly string[]).includes(value);
+}
+
+/**
+ * Canonical slide content, validated at the boundary. `PRESENTATION-SLIDES.md` is
+ * generated from this, and `accent` is checked rather than cast so a typo in the JSON
+ * fails the build instead of silently rendering an unstyled slide.
+ */
+export const SLIDES: readonly Slide[] = data.slides.map((slide) => {
+  if (!isAccent(slide.accent)) {
+    throw new Error(`Slide ${slide.number} has an unknown accent "${slide.accent}".`);
+  }
+
+  return {
+    number: slide.number,
+    timing: slide.timing,
+    accent: slide.accent,
+    eyebrow: slide.eyebrow,
+    kicker: slide.kicker,
+    title: slide.title,
+    subtitle: slide.subtitle,
+    pullQuote: slide.pullQuote,
+    cards: slide.cards,
+    notes: slide.notes,
+  };
+});
+
 export const TALK = data.talk;
 
 /** Elements that own the arrow keys while focused. */
@@ -80,7 +112,11 @@ export default function Presentation({ onOpenLab }: PresentationProps) {
         </button>
       </div>
 
-      <article className="slide" aria-label={`Slide ${slide.number} of ${total}`}>
+      <article
+        className="slide"
+        data-accent={slide.accent}
+        aria-label={`Slide ${slide.number} of ${total}`}
+      >
         <p className="slide__eyebrow">{slide.eyebrow}</p>
         <h2 className="slide__title">{slide.title}</h2>
         <p className="slide__sub">{slide.subtitle}</p>

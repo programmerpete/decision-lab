@@ -1,17 +1,34 @@
 # Presentation run sheet
 
-Target: 15–20 minutes, mixed technical and leadership audience. Open **Present** in the website; eight slides include speaker notes. Browser fullscreen is optional. Use buttons or arrow keys when focus is outside controls.
+Target: 15–20 minutes, mixed technical and leadership audience. Open **Present** in the website; eleven slides include speaker notes. Browser fullscreen is optional. Use buttons or arrow keys when focus is outside controls. The timings below total 20 minutes; cut the origin section (2–6.5 min) first if you are running short, since the demos carry the talk.
 
-| Time      | Slide / demo                            | Talk track                                                                                                                                                                  |
-| --------- | --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 0–2 min   | Does this decision need a conversation? | Ask where teams pay for an LLM to return only a category. LLMs are useful for generation, explanation, and deeper reasoning; typed decision APIs target bounded judgments.  |
-| 2–4 min   | Choice / Score / Noul; open Learn       | Explain categories, ordered scores, and probability of a proposition. A 50% probability is uncertainty, not a middling score. Probability is not confidence or accuracy.    |
-| 4–7 min   | Support triage; open Explore            | Run Duplicate charge, Negation, and Ambiguous. Show five questions, explicit review route, raw JSON. An intent classifier cannot approve a refund.                          |
-| 7–9 min   | Code review                             | Compare raw token logging with redacted logging; then removed authorisation. A model that flags everything is not useful. Small snippets cannot prove complete code safety. |
-| 9–12 min  | Moderation / PII                        | Compare Scam warning and Credential scam; show obfuscated synthetic address. Context matters. Detection does not mean exact span identification or safe redaction.          |
-| 12–14 min | Agent tools                             | Search documentation, missing order number, unsupported deletion. A fixed catalogue is inspectable. Selection grants no permissions; no tool is actually called.            |
-| 14–17 min | The experiment                          | Show measured results only after API/evaluation phases. Discuss accuracy, misses, false alarms, review rate, p50/p95 latency, total cost, and failures together.            |
-| 17–20 min | Use each component for its strengths    | Explain a measured hybrid workflow and its tradeoffs. Land the two application use cases below. End on evidence and limitations.                                            |
+| Time        | Slide / demo                            | Talk track                                                                                                                                                                  |
+| ----------- | --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0–2 min     | Does this decision need a conversation? | Ask where teams pay for an LLM to return only a category. LLMs are useful for generation, explanation, and deeper reasoning; typed decision APIs target bounded judgments.  |
+| 2–3.5 min   | Fast decisions / slow reasoning         | Kahneman's System 1 and System 2. A person reads prose; software reads a value. Optimising for one does not optimise for the other.                                         |
+| 3.5–5 min   | Where it came from                      | RLHF produced assistants, and Almeida co-invented it. Then two years on the opposite problem. The three post-training paths: RLHF, RLVR, RLCD. Present as their position.   |
+| 5–6.5 min   | How it works                            | Sequential versus parallel sampling. A fixed shape means no type errors, which is not the same as being correct. Calibration is a claim about groups, not one answer.       |
+| 6.5–8 min   | Choice / Score / Noul; open Learn       | Explain categories, ordered scores, and probability of a proposition. A 50% probability is uncertainty, not a middling score. Probability is not confidence or accuracy.    |
+| 8–10.5 min  | Support triage; open Explore            | Run Duplicate charge, Negation, and Ambiguous. Show five questions, explicit review route, raw JSON. An intent classifier cannot approve a refund.                          |
+| 10.5–12 min | Code review                             | Compare raw token logging with redacted logging; then removed authorisation. A model that flags everything is not useful. Small snippets cannot prove complete code safety. |
+| 12–13.5 min | Moderation / PII                        | Compare Scam warning and Credential scam; show obfuscated synthetic address. Context matters. Detection does not mean exact span identification or safe redaction.          |
+| 13.5–15 min | Agent tools                             | Search documentation, missing order number, unsupported deletion. A fixed catalogue is inspectable. Selection grants no permissions; no tool is actually called.            |
+| 15–17.5 min | The experiment                          | Show measured results only after API/evaluation phases. Discuss accuracy, misses, false alarms, review rate, p50/p95 latency, total cost, and failures together.            |
+| 17.5–20 min | Use each component for its strengths    | Explain a measured hybrid workflow and its tradeoffs. Land the two application use cases below. End on evidence and limitations.                                            |
+
+## Where the explanation material comes from
+
+Slides 2 to 4 follow the structure of **["Jev - The Ultimate Classification Model?"](https://youtu.be/X117w2Rark8) by Sam Witteveen** (chapters: Kinds of Reasoning, Jev by TypeSafe AI, Kinds of Questions, demos, How it works). That video is the reference the owner asked us to integrate, and it is what the ordering of those slides mirrors.
+
+The **facts** on those slides come from TypeSafe's own published material, not from the video's narration:
+
+- [Introducing System One Models & Jev](https://typesafe.ai/blog/introducing-system-one-models-and-jev) — the launch post. Source of the verbatim quote on slide 3, the Kahneman and Jevons naming, the parallel-versus-sequential framing, "the model never makes type errors", and the vendor speed and cost claims.
+- [The AI primer](https://docs.typesafe.ai/introduction/machine-learning-primer) — Machine Native Intelligence, the RLHF / RLVR / RLCD comparison, mode dropping, and the calibration definition on slide 4.
+
+Two things to hold to while presenting those slides:
+
+1. **The framing is TypeSafe's position, not a settled result.** That RLHF's objective is wrong for automation, and that System One Models can be made reliable rather than error-prone, are arguments the company makes. Say "they argue", not "it is known".
+2. **The deck could not be built from the video's transcript.** YouTube blocks transcript access from this environment, so the slides mirror the video's chapter structure while every factual claim traces to the two vendor sources above. Nothing on those slides is attributed to Witteveen, and no viewer of the video should be told the deck quotes it.
 
 ## Application use cases
 

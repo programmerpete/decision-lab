@@ -9,7 +9,8 @@ statement, and the rehearsal guidance live in [PRESENTATION.md](PRESENTATION.md)
 ## 01 · Does this decision need a conversation?
 
 **Timing:** 0–2 min  
-**Eyebrow:** FRAMING
+**Eyebrow:** FRAMING  
+**Accent:** green
 
 Where teams pay an LLM to return only a category.
 
@@ -22,10 +23,109 @@ Where teams pay an LLM to return only a category.
 - Typed decision APIs target bounded judgments that ordinary code can branch on.
 - Say the mode aloud: "These are authored examples illustrating the interfaces. Neither model has run. These numbers are not accuracy, latency, or cost results."
 
-## 02 · Choice. Score. Noul.
+## 02 · Fast decisions. Slow reasoning. Different jobs.
 
-**Timing:** 2–4 min  
-**Eyebrow:** THREE BUILDING BLOCKS
+**Timing:** 2–3.5 min  
+**Eyebrow:** KINDS OF REASONING  
+**Accent:** violet
+
+Kahneman's System 1 and System 2 describe two kinds of thinking. TypeSafe named its model class after the first, and argues it can be made reliable rather than error-prone.
+
+### TWO KINDS OF THINKING
+
+- System 1 — fast, intuitive, pattern-matching. Where a route or a label comes from.
+- System 2 — slow, deliberate, step-by-step. Where a proof or a plan comes from.
+- Reasoning models moved System 2 into software. Decisions were left behind.
+
+> The framing is Daniel Kahneman's. TypeSafe's own gloss is that System 1 thinking has always implied error-prone, and that a System One Model can be trained to be calibrated instead.
+
+### TWO INTERFACES
+
+- A chat model answers a person, in prose, at human speed.
+- A decision model answers software, in types, at software speed.
+- TypeSafe calls the second target Machine Native Intelligence.
+
+> Their stated expectation: large-scale automation is closer to 99% machine-to-machine than to a conversation.
+
+> Chat is a human interface. Automation needs a machine one.
+
+**Speaker notes**
+
+- Kahneman's Thinking, Fast and Slow is where the System 1 / System 2 vocabulary comes from. TypeSafe named the model class after it.
+- The useful part is not the metaphor, it is the interface: a person reads prose, software reads a value. Optimising for one does not optimise for the other.
+- Say plainly that System 1 in psychology implies error-prone, and that TypeSafe's claim is that this is a training-target problem rather than a law. That claim is theirs, and it is what the rest of the deck tests.
+- Bridge to the next slide: this is the bet, and here is where it came from.
+
+## 03 · The people who built chat, betting against chat.
+
+**Timing:** 3.5–5 min  
+**Eyebrow:** WHERE IT CAME FROM  
+**Accent:** amber
+
+Diogo Almeida co-invented the method that turned language models into assistants, then spent two years in stealth on the opposite problem.
+
+### THREE POST-TRAINING PATHS
+
+- RLHF — human feedback. Produced InstructGPT and ChatGPT. Optimises for what people prefer to read.
+- RLVR — verifiable rewards. Produced reasoning models. Strong at maths, slower and dearer.
+- RLCD — calibrated decisions. TypeSafe's path. Returns decisions and probabilities, not text.
+
+> TypeSafe's stated criticism of RLHF: preference optimisation can reward sycophancy and confident-sounding hallucination, and it narrows the output distribution — mode dropping.
+
+### THE TIMELINE
+
+- RLHF and InstructGPT — the work that led to ChatGPT.
+- Two years in stealth building a different stack.
+- 15 September 2026 — Jev released in early access.
+
+> Jev is named after William Stanley Jevons, for the idea that cheaper intelligence creates more demand for it rather than less.
+
+> "Models have been superhuman at chat for years, so where is all the automation?"
+
+**Speaker notes**
+
+- The quote on this slide is verbatim from TypeSafe's launch post. It is the question the company is built on.
+- RLHF is the path that made assistants work, and Almeida co-invented it. That is the credibility argument, and it is also why the criticism of it carries weight.
+- The three-path framing is theirs. Present it as their position, not as settled science: the claim that RLHF's objective is wrong for automation is an argument, not a result.
+- RLCD is the thing to remember: reinforcement learning for calibrated decisions. Calibrated is doing the work in that phrase.
+
+## 04 · All the answers at once, inside a fixed shape.
+
+**Timing:** 5–6.5 min  
+**Eyebrow:** HOW IT WORKS  
+**Accent:** blue
+
+A language model writes one token at a time and you hope the result parses. A decision model is handed the shape in advance and fills it in a single pass.
+
+### TWO SAMPLING MODES
+
+- Sequential — one token at a time, each conditioned on the last. Flexible, slow, and free to go off the rails.
+- Parallel — every output produced in a single query. Constrained, fast, and hardware-aware.
+
+> This is the mechanical reason for the speed difference, and the reason several judgments over one state cost one round trip.
+
+### WHAT CALIBRATED MEANS
+
+- Across many predictions, outcomes given 0.8 should happen about 80% of the time.
+- Outcomes given 0.2 should happen about 20% of the time.
+- That is a statement about groups of predictions, never a guarantee about one answer.
+
+> Which is why a threshold routes on uncertainty rather than treating a high number as permission.
+
+> The model never makes type errors.
+
+**Speaker notes**
+
+- The pull quote is TypeSafe's own phrasing. The claim is narrower than it sounds: the shape is fixed before the query runs, so an out-of-schema value is not possible. That is not the same as being correct.
+- Calibration is the part worth slowing down on. 0.8 means right about 80% of the time across many predictions — not 80% certain about this one. The last bullet is the honest caveat and it is on the slide.
+- Everything in the vendor's cost and speed claims is attributed vendor context, not our measurement. The deck keeps those numbers on the Method surface.
+- Bridge: that is the machinery. Here is what it actually returns.
+
+## 05 · Choice. Score. Noul.
+
+**Timing:** 6.5–8 min  
+**Eyebrow:** THREE BUILDING BLOCKS  
+**Accent:** green
 
 Choice selects from a defined set. Score rates against ordered levels. Noul estimates the probability that a proposition is true.
 
@@ -54,10 +154,11 @@ Choice selects from a defined set. Score rates against ordered levels. Noul esti
 - Scores are continuous positions, not buckets. 2.64 on a four-level rubric sits nearest level 3.
 - The traffic-cop result is an argument for reading the whole distribution: importance confidence is 0.64, the top two levels split 0.35/0.65, and next_step says automate while the score sits nearest "respond now".
 
-## 03 · One ticket. Five judgments.
+## 06 · One ticket. Five judgments.
 
-**Timing:** 4–7 min  
-**Eyebrow:** 01 / SUPPORT
+**Timing:** 8–10.5 min  
+**Eyebrow:** 01 / SUPPORT  
+**Accent:** green
 **Kicker:** SUPPORT
 
 Route to a team, detect refund intent, estimate urgency and frustration, and flag possible instruction injection.
@@ -72,10 +173,11 @@ Route to a team, detect refund intent, estimate urgency and frustration, and fla
 - Inspect the labelled JSON. Both lanes reference one shared authored example and every metric is null.
 - Edit one character and submit: the site refuses to invent an answer.
 
-## 04 · Triage the risk. Keep the reviewer.
+## 07 · Triage the risk. Keep the reviewer.
 
-**Timing:** 7–9 min  
-**Eyebrow:** 02 / CODE REVIEW
+**Timing:** 10.5–12 min  
+**Eyebrow:** 02 / CODE REVIEW  
+**Accent:** blue
 **Kicker:** CODE REVIEW
 
 A removed authorisation check and raw credential logging deserve attention. Redacted logging is a useful safe counterpart.
@@ -90,10 +192,11 @@ A removed authorisation check and raw credential logging deserve attention. Reda
 - These fixtures illustrate contrasts. They do not measure defect detection or false-alarm rates.
 - Small diffs cannot prove a codebase safe, and this tool never approves or merges anything.
 
-## 05 · Context changes the decision.
+## 08 · Context changes the decision.
 
-**Timing:** 9–12 min  
-**Eyebrow:** 03 / MODERATION
+**Timing:** 12–13.5 min  
+**Eyebrow:** 03 / MODERATION  
+**Accent:** amber
 **Kicker:** MODERATION
 
 A scam and a scam-awareness warning can contain the same keywords. An explicit policy separates detection from action.
@@ -108,10 +211,11 @@ A scam and a scam-awareness warning can contain the same keywords. An explicit p
 - Every name, address, and number in this scenario is fictional and authored for the demo.
 - A real redaction task needs span-level precision and recall on its own dataset.
 
-## 06 · A catalogue you can inspect.
+## 09 · A catalogue you can inspect.
 
-**Timing:** 12–14 min  
-**Eyebrow:** 04 / AGENT TOOLS
+**Timing:** 13.5–15 min  
+**Eyebrow:** 04 / AGENT TOOLS  
+**Accent:** violet
 **Kicker:** AGENT TOOLS
 
 Selection grants no permissions and runs nothing.
@@ -126,10 +230,11 @@ Selection grants no permissions and runs nothing.
 - A fixed catalogue is inspectable. You can read exactly what the agent is allowed to consider.
 - Selection grants no permissions and runs nothing. An executor would need its own authentication, authorization, and argument validation.
 
-## 07 · The experiment.
+## 10 · The experiment.
 
-**Timing:** 14–17 min  
-**Eyebrow:** EVIDENCE
+**Timing:** 15–17.5 min  
+**Eyebrow:** EVIDENCE  
+**Accent:** green
 
 Accuracy, misses, latency, and cost — measured together.
 
@@ -159,10 +264,11 @@ Accuracy, misses, latency, and cost — measured together.
 - Separate billed from estimated cost, browser from provider timing, and retries from first attempts. Self-reported LLM probabilities are not automatically calibrated.
 - Vendor figures — 193.6× faster, 444.6× cheaper, 70–500 ms, $0.042 per million input tokens — are workflow-eval-specific, vendor-acknowledged as the high end, and are not our measurements.
 
-## 08 · Use each component for its strengths.
+## 11 · Use each component for its strengths.
 
-**Timing:** 17–20 min  
-**Eyebrow:** CLOSE
+**Timing:** 17.5–20 min  
+**Eyebrow:** CLOSE  
+**Accent:** green
 
 A measured hybrid, and where each method failed.
 
