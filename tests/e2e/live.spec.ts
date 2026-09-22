@@ -128,6 +128,12 @@ test.describe('live mode', () => {
     await expect(jev.getByRole('listitem')).toHaveCount(5);
     await expect(llm.getByRole('listitem')).toHaveCount(5);
 
+    // Each lane is badged live, not left looking like a fixture.
+    await expect(jev.getByText('Live', { exact: true })).toBeVisible();
+    await expect(llm.getByText('Live', { exact: true })).toBeVisible();
+    await expect(jev.getByText('Fixture', { exact: true })).toHaveCount(0);
+    await expect(llm.getByText('Fixture', { exact: true })).toHaveCount(0);
+
     // Each lane carries its own provider, model, request id, and cost. Exact matching
     // matters here: "TypeSafe" is a substring of "typesafe/jev-1.13-20260917".
     await expect(jev.getByText('TypeSafe', { exact: true })).toBeVisible();
