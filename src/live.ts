@@ -79,6 +79,17 @@ export interface LiveUsage {
   readonly costUsd: number;
 }
 
+/**
+ * What was actually sent and what actually came back, kept for display. The presenter
+ * can open this on stage, so it must be the real exchange rather than a reconstruction.
+ */
+export interface LiveExchange {
+  readonly request: LiveRequest;
+  /** The parsed response body, or null when nothing arrived. */
+  readonly response: unknown;
+  readonly status: number;
+}
+
 export interface LiveSuccess {
   readonly ok: true;
   /** Which arm answered. Recorded so a response can never be attributed to the wrong lane. */
@@ -96,6 +107,7 @@ export interface LiveSuccess {
    * because the provider's figure excludes the Worker and the network.
    */
   readonly clientDurationMs: number;
+  readonly exchange: LiveExchange;
 }
 
 export interface LiveFailure {
@@ -104,6 +116,7 @@ export interface LiveFailure {
   readonly status: number;
   readonly message: string;
   readonly detail: string | null;
+  readonly exchange: LiveExchange;
 }
 
 export type LiveOutcome = LiveSuccess | LiveFailure;
@@ -124,9 +137,10 @@ function failure(
   kind: string,
   status: number,
   message: string,
-  detail: string | null = null,
+  detail: string | null,
+  exchange: LiveExchange,
 ): LiveFailure {
-  return { ok: false, kind, status, message, detail };
+  return { ok: false, kind, status, message, detail, exchange };
 }
 
 function readNumberRecord(value: unknown): Record<string, number> | null {
@@ -263,8 +277,23 @@ export async function requestDecision(options: RequestOptions): Promise<LiveOutc
   const startedAt = performance.now();
   const elapsed = () => Math.round(performance.now() - startedAt);
 
+  // Built before the call so the exact bytes that were sent stay available for display,
+  // including when the call fails before a response arrives.
+  const request = buildLiveRequest(scenario, state, lane);
+  const exchange = (response: unknown, status: number): LiveExchange => ({
+    request,
+    response,
+    status,
+  });
+
   if (token.trim().length === 0) {
-    return failure('auth', 401, 'Enter the presenter token to make a live call.');
+    return failure(
+      'auth',
+      401,
+      'Enter the presenter token to make a live call.',
+      null,
+      exchange(null, 0),
+    );
   }
 
   let response: Response;
@@ -275,17 +304,25 @@ export async function requestDecision(options: RequestOptions): Promise<LiveOutc
         Authorization: `Bearer ${token.trim()}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(buildLiveRequest(scenario, state, lane)),
+      body: JSON.stringify(request),
       ...(signal ? { signal } : {}),
     });
   } catch (error) {
     if (error instanceof DOMException && error.name === 'AbortError') {
-      return failure('cancelled', 0, 'The request was replaced before it finished.');
+      return failure(
+        'cancelled',
+        0,
+        'The request was replaced before it finished.',
+        null,
+        exchange(null, 0),
+      );
     }
     return failure(
       'network',
       0,
       'The request never reached the live endpoint. Check the network and try again.',
+      null,
+      exchange(null, 0),
     );
   }
 
@@ -297,11 +334,19 @@ export async function requestDecision(options: RequestOptions): Promise<LiveOutc
       'invalid_response',
       response.status,
       `The endpoint returned a body that is not JSON (HTTP ${response.status}).`,
+      null,
+      exchange(null, response.status),
     );
   }
 
   if (!isRecord(payload)) {
-    return failure('invalid_response', response.status, 'The endpoint returned an empty body.');
+    return failure(
+      'invalid_response',
+      response.status,
+      'The endpoint returned an empty body.',
+      null,
+      exchange(payload, response.status),
+    );
   }
 
   if (payload.ok !== true) {
@@ -311,6 +356,8 @@ export async function requestDecision(options: RequestOptions): Promise<LiveOutc
         'invalid_response',
         response.status,
         'The endpoint reported a failure that also carried answers. Refusing to render it.',
+        null,
+        exchange(payload, response.status),
       );
     }
 
@@ -321,6 +368,7 @@ export async function requestDecision(options: RequestOptions): Promise<LiveOutc
         ? payload.message
         : `Live call failed (HTTP ${response.status}).`,
       typeof payload.detail === 'string' ? payload.detail : null,
+      exchange(payload, response.status),
     );
   }
 
@@ -330,6 +378,8 @@ export async function requestDecision(options: RequestOptions): Promise<LiveOutc
       'invalid_response',
       response.status,
       'The endpoint returned answers that do not match the questions that were asked.',
+      null,
+      exchange(payload, response.status),
     );
   }
 
@@ -341,6 +391,8 @@ export async function requestDecision(options: RequestOptions): Promise<LiveOutc
       'invalid_response',
       response.status,
       `The endpoint answered for the "${payload.lane}" lane when "${lane}" was requested.`,
+      null,
+      exchange(payload, response.status),
     );
   }
 
@@ -354,5 +406,6 @@ export async function requestDecision(options: RequestOptions): Promise<LiveOutc
     usage: readUsage(payload.usage),
     latencyMs: isFiniteNumber(payload.latencyMs) ? payload.latencyMs : 0,
     clientDurationMs: elapsed(),
+    exchange: exchange(payload, response.status),
   };
 }

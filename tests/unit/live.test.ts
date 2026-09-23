@@ -453,3 +453,97 @@ describe('live transport', () => {
     }
   });
 });
+
+describe('captured exchange', () => {
+  it('keeps the request that was actually sent alongside the response', async () => {
+    const target = scenario('support-triage');
+    const payload = successPayload(target);
+    respondWith(payload);
+
+    const outcome = await requestDecision({
+      scenario: target,
+      state: 'hello',
+      lane: 'jev',
+      token: TOKEN,
+    });
+
+    expect(outcome.ok).toBe(true);
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+
+    // The displayed request must be the bytes that went out, not a rebuild of them.
+    expect(JSON.stringify(outcome.exchange.request)).toBe(String(init.body));
+    expect(outcome.exchange.status).toBe(200);
+    expect(outcome.exchange.response).toEqual(payload);
+  });
+
+  it('keeps the failure body so the presenter can show what came back', async () => {
+    respondWith(
+      { ok: false, kind: 'provider', status: 502, message: 'Provider failed.', detail: 'timeout' },
+      502,
+    );
+
+    const outcome = await requestDecision({
+      scenario: scenario('support-triage'),
+      state: 'hello',
+      lane: 'jev',
+      token: TOKEN,
+    });
+
+    expect(outcome.ok).toBe(false);
+    expect(outcome.exchange.status).toBe(502);
+    expect(outcome.exchange.response).toMatchObject({ ok: false, detail: 'timeout' });
+  });
+
+  it('keeps the request when no response ever arrived', async () => {
+    fetchMock.mockRejectedValue(new TypeError('Failed to fetch'));
+
+    const outcome = await requestDecision({
+      scenario: scenario('support-triage'),
+      state: 'hello',
+      lane: 'llm',
+      token: TOKEN,
+    });
+
+    expect(outcome.ok).toBe(false);
+    expect(outcome.exchange.response).toBeNull();
+    expect(outcome.exchange.request.lane).toBe('llm');
+  });
+
+  it('captures the request even when the call is refused before it is sent', async () => {
+    const outcome = await requestDecision({
+      scenario: scenario('support-triage'),
+      state: 'hello',
+      lane: 'jev',
+      token: '',
+    });
+
+    expect(outcome.ok).toBe(false);
+    expect(outcome.exchange.response).toBeNull();
+    expect(outcome.exchange.request.state).toBe('hello');
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('captures two requests that differ only by lane, for the same input', async () => {
+    const target = scenario('support-triage');
+    respondWith(successPayload(target));
+
+    const jev = await requestDecision({
+      scenario: target,
+      state: 'payouts failing',
+      lane: 'jev',
+      token: TOKEN,
+    });
+    const llm = await requestDecision({
+      scenario: target,
+      state: 'payouts failing',
+      lane: 'llm',
+      token: TOKEN,
+    });
+
+    // This is the claim the dialog makes on screen, so it is asserted here rather
+    // than left to the reader to spot.
+    expect(JSON.stringify({ ...llm.exchange.request, lane: null })).toBe(
+      JSON.stringify({ ...jev.exchange.request, lane: null }),
+    );
+  });
+});

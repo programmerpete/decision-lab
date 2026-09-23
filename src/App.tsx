@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
+import JsonDialog from './JsonDialog';
+import type { JsonLaneView } from './JsonDialog';
 import LazyOrbit from './LazyOrbit';
 import Presentation from './Presentation';
 import ResultLane from './ResultLane';
@@ -171,6 +173,8 @@ interface ExploreProps {
   readonly onSubmit: () => void;
   readonly onThresholdChange: (value: number) => void;
   readonly onDownload: () => void;
+  readonly onOpenJson: () => void;
+  readonly jsonLanes: Readonly<Record<Lane, JsonLaneView>>;
   readonly onModeChange: (mode: Mode) => void;
   readonly onTokenChange: (token: string) => void;
 }
@@ -196,6 +200,8 @@ function Explore({
   onSubmit,
   onThresholdChange,
   onDownload,
+  onOpenJson,
+  jsonLanes,
   onModeChange,
   onTokenChange,
 }: ExploreProps) {
@@ -563,6 +569,17 @@ function Explore({
                     <button type="button" className="button" onClick={onDownload}>
                       Download labelled fixture JSON ↓
                     </button>
+                  </div>
+                ) : null}
+
+                {mode === 'live' && (jsonLanes.jev.exchange || jsonLanes.llm.exchange) ? (
+                  <div className="policy__export">
+                    <button type="button" className="button" onClick={onOpenJson}>
+                      Show request and response JSON
+                    </button>
+                    <p className="policy__export-note">
+                      The exact bodies sent to and received from the live endpoint, for both lanes.
+                    </p>
                   </div>
                 ) : null}
               </section>
@@ -939,6 +956,7 @@ export default function App() {
   const [mode, setMode] = useState<Mode>('fixture');
   const [token, setToken] = useState('');
   const [liveRuns, setLiveRuns] = useState<Readonly<Record<Lane, LiveLane>>>(IDLE_LANES);
+  const [jsonDialogOpen, setJsonDialogOpen] = useState(false);
 
   // One abort path and one sequence per lane, so a slow LLM call cannot cancel or
   // overwrite a fast typed call, and vice versa.
@@ -978,7 +996,25 @@ export default function App() {
     }
     setResult(undefined);
     setLiveRuns(IDLE_LANES);
+    // A captured exchange belongs to the input that produced it, so clearing the
+    // outputs closes the JSON view rather than leaving the previous call on screen.
+    setJsonDialogOpen(false);
   }, []);
+
+  /** The captured request and response per lane, for the JSON dialog. */
+  const jsonLanes = useMemo<Readonly<Record<Lane, JsonLaneView>>>(() => {
+    const view = (lane: Lane): JsonLaneView => {
+      const state = liveRuns[lane];
+      if (state.kind === 'success') {
+        return { exchange: state.run.exchange, loading: false };
+      }
+      if (state.kind === 'error') {
+        return { exchange: state.failure.exchange, loading: false };
+      }
+      return { exchange: null, loading: state.kind === 'loading' };
+    };
+    return { jev: view('jev'), llm: view('llm') };
+  }, [liveRuns]);
 
   const active = result && result.scenarioId === scenario.id ? result.evaluation : undefined;
   const run = active?.ok && active.run.input === input ? active.run : null;
@@ -1265,6 +1301,8 @@ export default function App() {
             onSubmit={handleSubmit}
             onThresholdChange={setThreshold}
             onDownload={handleDownload}
+            onOpenJson={() => setJsonDialogOpen(true)}
+            jsonLanes={jsonLanes}
             onModeChange={handleModeChange}
             onTokenChange={setToken}
           />
@@ -1274,6 +1312,12 @@ export default function App() {
         {view === 'present' ? <Presentation onOpenLab={() => navigate('explore')} /> : null}
         {view === 'method' ? <Method /> : null}
       </main>
+
+      <JsonDialog
+        open={jsonDialogOpen}
+        onClose={() => setJsonDialogOpen(false)}
+        lanes={jsonLanes}
+      />
 
       <footer className="footer wrap">
         <p>

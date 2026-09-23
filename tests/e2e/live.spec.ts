@@ -59,6 +59,8 @@ function liveResponse(lane: LaneId) {
 interface LaneResponse {
   readonly status: number;
   readonly body: unknown;
+  /** Hold the response, so a test can observe a lane while its call is in flight. */
+  readonly delayMs?: number;
 }
 
 /**
@@ -69,7 +71,7 @@ async function mockLanes(
   page: Page,
   responses: Partial<Record<LaneId, LaneResponse>> = {},
 ): Promise<void> {
-  await page.route(LIVE_GLOB, (route) => {
+  await page.route(LIVE_GLOB, async (route) => {
     const request = route.request();
 
     if (request.method() === 'OPTIONS') {
@@ -79,6 +81,10 @@ async function mockLanes(
     const sent = JSON.parse(request.postData() ?? '{}') as { lane?: string };
     const lane: LaneId = sent.lane === 'llm' ? 'llm' : 'jev';
     const chosen = responses[lane] ?? { status: 200, body: liveResponse(lane) };
+
+    if (chosen.delayMs) {
+      await new Promise((resolve) => setTimeout(resolve, chosen.delayMs));
+    }
 
     return route.fulfill({
       status: chosen.status,
@@ -368,5 +374,185 @@ test.describe('live mode', () => {
     // The policy card describes a rule, not the data, so its label changes too.
     await expect(page.getByText('Illustrated outcome')).toHaveCount(0);
     await expect(page.getByText('Outcome of this rule')).toBeVisible();
+  });
+});
+
+test.describe('JSON dialog', () => {
+  /** The pane for one lane and one side of the exchange, found by its caption. */
+  function pane(page: Page, laneName: string, side: 'request' | 'response') {
+    return page
+      .getByRole('dialog', { name: 'Request and response JSON' })
+      .locator('figure')
+      .filter({ hasText: `${laneName} · ${side}` });
+  }
+
+  const openJson = (page: Page) =>
+    page.getByRole('button', { name: 'Show request and response JSON' }).click();
+
+  test('is offered only in live mode, and only once a call has settled', async ({ page }) => {
+    await mockLanes(page);
+    await page.goto('./');
+
+    // Fixture mode has no live request to show; it keeps its own export controls.
+    await expect(page.getByRole('button', { name: 'Show request and response JSON' })).toHaveCount(
+      0,
+    );
+
+    await enterLiveMode(page);
+    await expect(page.getByRole('button', { name: 'Show request and response JSON' })).toHaveCount(
+      0,
+    );
+
+    await runLive(page);
+    await expect(
+      page.getByRole('button', { name: 'Show request and response JSON' }),
+    ).toBeVisible();
+  });
+
+  test('shows the request and the response for both lanes', async ({ page }) => {
+    await mockLanes(page);
+    await page.goto('./');
+    await enterLiveMode(page);
+    await runLive(page);
+    // Read after the run: the preset sets the input, and the request must carry it.
+    const state = await page.locator('#lab-input').inputValue();
+    await openJson(page);
+
+    const dialog = page.getByRole('dialog', { name: 'Request and response JSON' });
+    await expect(dialog).toBeVisible();
+
+    // The request is the one that was sent, carrying the input verbatim.
+    await expect(pane(page, 'Jev', 'request').locator('pre')).toContainText('"lane": "jev"');
+    await expect(pane(page, 'LLM', 'request').locator('pre')).toContainText('"lane": "llm"');
+    await expect(pane(page, 'Jev', 'request').locator('pre')).toContainText(JSON.stringify(state));
+    await expect(pane(page, 'Jev', 'request').locator('pre')).toContainText('"questions"');
+
+    // Each response is the one that came back, attributed to the provider that sent it.
+    await expect(pane(page, 'Jev', 'response').locator('pre')).toContainText('"TypeSafe"');
+    await expect(pane(page, 'Jev', 'response').locator('pre')).toContainText(
+      '"typesafe/jev-1.13-20260917"',
+    );
+    await expect(pane(page, 'LLM', 'response').locator('pre')).toContainText('"Amazon Bedrock"');
+    await expect(pane(page, 'LLM', 'response').locator('pre')).toContainText(
+      '"anthropic/claude-haiku-4.5"',
+    );
+  });
+
+  test('states that the two requests differ only by lane, from the rendered text', async ({
+    page,
+  }) => {
+    await mockLanes(page);
+    await page.goto('./');
+    await enterLiveMode(page);
+    await runLive(page);
+    await openJson(page);
+
+    const withoutLane = async (laneName: string) =>
+      (await pane(page, laneName, 'request').locator('pre').innerText())
+        .split('\n')
+        .filter((line) => !line.includes('"lane"'))
+        .join('\n');
+
+    // The claim on screen, checked against what is on screen.
+    expect(await withoutLane('Jev')).toBe(await withoutLane('LLM'));
+    await expect(page.getByRole('dialog')).toContainText('identical apart from the lane field');
+  });
+
+  test('shows the failure body when a lane fails, with no fixture values', async ({ page }) => {
+    await mockLanes(page, {
+      llm: {
+        status: 502,
+        body: {
+          ok: false,
+          kind: 'provider',
+          status: 502,
+          message: 'The provider failed.',
+          detail: 'upstream_timeout',
+        },
+      },
+    });
+    await page.goto('./');
+    await enterLiveMode(page);
+    await runLive(page);
+    await openJson(page);
+
+    const llmResponse = pane(page, 'LLM', 'response');
+    await expect(llmResponse.locator('pre')).toContainText('"ok": false');
+    await expect(llmResponse.locator('pre')).toContainText('"upstream_timeout"');
+    // The typed lane's own response is still its own, not a copy of the failure.
+    await expect(pane(page, 'Jev', 'response').locator('pre')).toContainText('"TypeSafe"');
+  });
+
+  test('shows the request and says no body arrived when the call never left', async ({ page }) => {
+    await mockLanes(page);
+    await page.goto('./');
+    await enterLiveMode(page);
+    await page.getByLabel('Presenter token').fill('');
+    await runLive(page);
+
+    await openJson(page);
+
+    // The request is still shown: it is what would have been sent.
+    await expect(pane(page, 'Jev', 'request').locator('pre')).toContainText('"lane": "jev"');
+    await expect(page.getByRole('dialog')).toContainText(
+      'The call was made but no response body arrived.',
+    );
+  });
+
+  test('says a lane is still waiting rather than that it never ran', async ({ page }) => {
+    // The typed lane answers in milliseconds and the language model takes seconds, so a
+    // presenter opening this during a run will see exactly this state.
+    await mockLanes(page, {
+      llm: { status: 200, body: liveResponse('llm'), delayMs: 4000 },
+    });
+    await page.goto('./');
+    await enterLiveMode(page);
+    await runLive(page);
+
+    await openJson(page);
+
+    // The typed lane has already settled and is shown in full.
+    await expect(pane(page, 'Jev', 'response').locator('pre')).toContainText('"TypeSafe"');
+
+    // The language model has not. "Waiting" is the honest word: a call is in flight, so
+    // this must not read as "no call was made".
+    await expect(pane(page, 'LLM', 'response').locator('p')).toHaveText(
+      'Waiting for this lane to answer.',
+    );
+    await expect(page.getByRole('dialog')).not.toContainText('No call made yet.');
+  });
+
+  test('closes on Escape, and never shows a stale exchange', async ({ page }) => {
+    await mockLanes(page);
+    await page.goto('./');
+    await enterLiveMode(page);
+
+    const dialog = page.getByRole('dialog', { name: 'Request and response JSON' });
+
+    await runLive(page, 'Duplicate charge');
+    await openJson(page);
+    await expect(dialog).toBeVisible();
+
+    const first = await page.locator('#lab-input').inputValue();
+    await expect(pane(page, 'Jev', 'request').locator('pre')).toContainText(JSON.stringify(first));
+
+    await page.keyboard.press('Escape');
+    await expect(dialog).toBeHidden();
+
+    // A captured exchange belongs to the input that produced it, so changing the input
+    // takes the JSON away rather than leaving the previous call on screen.
+    await page.getByRole('button', { name: 'Negation', exact: true }).click();
+    await expect(page.getByRole('button', { name: 'Show request and response JSON' })).toHaveCount(
+      0,
+    );
+
+    await page.getByRole('button', { name: 'Run live comparison' }).click();
+    await openJson(page);
+
+    const second = await page.locator('#lab-input').inputValue();
+    expect(second).not.toBe(first);
+    const jevRequest = pane(page, 'Jev', 'request').locator('pre');
+    await expect(jevRequest).toContainText(JSON.stringify(second));
+    await expect(jevRequest).not.toContainText(JSON.stringify(first));
   });
 });
