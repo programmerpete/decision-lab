@@ -104,6 +104,29 @@ describe('live request shape', () => {
     expect(Object.keys(request.questions)).toEqual(target.questions.map((q) => q.id));
   });
 
+  it('sends an identical task to both lanes, differing only in the lane field', () => {
+    const target = scenario('support-triage');
+    const state = 'A synthetic message, sent to both arms.';
+
+    const jev = buildLiveRequest(target, state, 'jev');
+    const llm = buildLiveRequest(target, state, 'llm');
+
+    // The fairness guarantee for the whole comparison: same input, same questions,
+    // same criteria, same contract. Only the arm being asked differs.
+    expect(jev.lane).toBe('jev');
+    expect(llm.lane).toBe('llm');
+    expect(jev.state).toBe(llm.state);
+    expect(jev.questions).toEqual(llm.questions);
+    expect(JSON.stringify({ ...jev, lane: null })).toBe(JSON.stringify({ ...llm, lane: null }));
+
+    // Every question carries its type and its criteria to both arms.
+    for (const question of target.questions) {
+      expect(jev.questions[question.id]?.type).toBe(question.primitive);
+      expect(llm.questions[question.id]?.type).toBe(question.primitive);
+      expect(llm.questions[question.id]?.criteria).toEqual(jev.questions[question.id]?.criteria);
+    }
+  });
+
   it('maps criteria to the verified wire shapes', () => {
     const request = buildLiveRequest(scenario('support-triage'), 'hello', 'jev');
 
